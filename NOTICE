@@ -1,0 +1,12 @@
+AUV Practice
+
+This educational simulator follows Twin Delayed Deep Deterministic Policy
+Gradient (TD3), introduced by Scott Fujimoto, Herke van Hoof, and David Meger
+in "Addressing Function Approximation Error in Actor-Critic Methods" (2018).
+
+Algorithmic references include https://github.com/sfujim/TD3 and OpenAI
+Spinning Up's TD3 documentation. The software in this repository was written
+for this project rather than copied as a fork of those implementations.
+
+The AUV papers linked in README.md motivate the learning project. This code
+does not claim to reproduce their author implementations or reported results.

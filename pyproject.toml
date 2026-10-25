@@ -1,0 +1,34 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "auv-practice"
+version = "0.1.0"
+description = "An interactive, local TD3 learning laboratory for 2D AUV navigation"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "numpy>=1.26,<3",
+    "torch>=2.6,<3",
+    "gymnasium>=1.0,<2",
+    "fastapi>=0.115,<1",
+    "uvicorn>=0.30,<1",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "httpx>=0.27,<1"]
+
+[project.scripts]
+auv-practice = "auv_sim.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["auv_sim*"]
+
+[tool.setuptools.package-data]
+auv_sim = ["static/*.html", "static/*.js", "static/*.css", "assets/*.pt", "assets/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"

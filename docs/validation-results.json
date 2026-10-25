@@ -1,0 +1,1179 @@
+{
+  "config": {
+    "seed": 7,
+    "scenario": "reef",
+    "current_strength": 0.08
+  },
+  "td3_config": {
+    "hidden_dim": 128,
+    "learning_rate": 0.0003,
+    "discount": 0.99,
+    "tau": 0.005,
+    "policy_noise": 0.2,
+    "noise_clip": 0.5,
+    "policy_delay": 2,
+    "batch_size": 128,
+    "buffer_capacity": 100000
+  },
+  "training": {
+    "steps": 50000,
+    "total_steps": 50000,
+    "updates": 48873,
+    "actor_updates": 24436,
+    "episodes": 154,
+    "buffer_size": 30000,
+    "exploration_noise": 0.15,
+    "actor_loss": -17.185440063476562,
+    "critic_loss": 5.347536087036133,
+    "q1": 15.427826881408691,
+    "q2": 15.504865646362305,
+    "td_error": 1.169883131980896,
+    "steps_per_second": 0.0,
+    "phase": "Training budget complete"
+  },
+  "history": [
+    {
+      "episode": 1,
+      "steps": 246,
+      "return": -108.57111935626813,
+      "length": 246,
+      "outcome": "collision"
+    },
+    {
+      "episode": 2,
+      "steps": 746,
+      "return": 40.39782536495137,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 3,
+      "steps": 1058,
+      "return": -98.15983337805126,
+      "length": 312,
+      "outcome": "collision"
+    },
+    {
+      "episode": 4,
+      "steps": 1131,
+      "return": -103.81248006559018,
+      "length": 73,
+      "outcome": "collision"
+    },
+    {
+      "episode": 5,
+      "steps": 1631,
+      "return": 1.1891971409231528,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 6,
+      "steps": 1875,
+      "return": -107.96902792310638,
+      "length": 244,
+      "outcome": "collision"
+    },
+    {
+      "episode": 7,
+      "steps": 2375,
+      "return": -14.07915073877118,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 8,
+      "steps": 2637,
+      "return": -112.50824504554689,
+      "length": 262,
+      "outcome": "collision"
+    },
+    {
+      "episode": 9,
+      "steps": 2813,
+      "return": -114.78975587554581,
+      "length": 176,
+      "outcome": "collision"
+    },
+    {
+      "episode": 10,
+      "steps": 3313,
+      "return": -7.532036412656539,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 11,
+      "steps": 3813,
+      "return": 3.267159401214916,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 12,
+      "steps": 3946,
+      "return": -110.4498043492181,
+      "length": 133,
+      "outcome": "collision"
+    },
+    {
+      "episode": 13,
+      "steps": 4446,
+      "return": 9.105265819906382,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 14,
+      "steps": 4629,
+      "return": -112.48646772616455,
+      "length": 183,
+      "outcome": "collision"
+    },
+    {
+      "episode": 15,
+      "steps": 5129,
+      "return": -5.969280026786137,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 16,
+      "steps": 5423,
+      "return": -130.00447180028976,
+      "length": 294,
+      "outcome": "collision"
+    },
+    {
+      "episode": 17,
+      "steps": 5923,
+      "return": 4.310977489519841,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 18,
+      "steps": 6423,
+      "return": 0.952356562328858,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 19,
+      "steps": 6923,
+      "return": -0.29247325977920097,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 20,
+      "steps": 7423,
+      "return": -41.567777199047164,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 21,
+      "steps": 7739,
+      "return": -129.4657599794007,
+      "length": 316,
+      "outcome": "collision"
+    },
+    {
+      "episode": 22,
+      "steps": 8239,
+      "return": -15.42430762425728,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 23,
+      "steps": 8505,
+      "return": -122.48511959764853,
+      "length": 266,
+      "outcome": "collision"
+    },
+    {
+      "episode": 24,
+      "steps": 9005,
+      "return": 0.49988665601736215,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 25,
+      "steps": 9057,
+      "return": -63.444999058750874,
+      "length": 52,
+      "outcome": "collision"
+    },
+    {
+      "episode": 26,
+      "steps": 9108,
+      "return": -64.91841920740484,
+      "length": 51,
+      "outcome": "collision"
+    },
+    {
+      "episode": 27,
+      "steps": 9566,
+      "return": -80.30003397635787,
+      "length": 458,
+      "outcome": "collision"
+    },
+    {
+      "episode": 28,
+      "steps": 10003,
+      "return": -118.99307022855947,
+      "length": 437,
+      "outcome": "collision"
+    },
+    {
+      "episode": 29,
+      "steps": 10503,
+      "return": -22.578302838311878,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 30,
+      "steps": 10763,
+      "return": -118.7600486591615,
+      "length": 260,
+      "outcome": "collision"
+    },
+    {
+      "episode": 31,
+      "steps": 11263,
+      "return": -1.2285086430633076,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 32,
+      "steps": 11515,
+      "return": -112.1287740671815,
+      "length": 252,
+      "outcome": "collision"
+    },
+    {
+      "episode": 33,
+      "steps": 12015,
+      "return": 3.2148566737524336,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 34,
+      "steps": 12515,
+      "return": -23.568002095891693,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 35,
+      "steps": 12754,
+      "return": -117.74534453613197,
+      "length": 239,
+      "outcome": "collision"
+    },
+    {
+      "episode": 36,
+      "steps": 13151,
+      "return": -46.638882168010376,
+      "length": 397,
+      "outcome": "collision"
+    },
+    {
+      "episode": 37,
+      "steps": 13651,
+      "return": -3.0324792577187356,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 38,
+      "steps": 13984,
+      "return": -123.19707889121807,
+      "length": 333,
+      "outcome": "collision"
+    },
+    {
+      "episode": 39,
+      "steps": 14484,
+      "return": 12.10358392551473,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 40,
+      "steps": 14973,
+      "return": -99.19196427335633,
+      "length": 489,
+      "outcome": "collision"
+    },
+    {
+      "episode": 41,
+      "steps": 15448,
+      "return": -104.74363552208838,
+      "length": 475,
+      "outcome": "collision"
+    },
+    {
+      "episode": 42,
+      "steps": 15948,
+      "return": -3.461171341522381,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 43,
+      "steps": 16448,
+      "return": 2.9202901469044957,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 44,
+      "steps": 16948,
+      "return": 7.668306169042783,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 45,
+      "steps": 17448,
+      "return": 1.4391948638616627,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 46,
+      "steps": 17948,
+      "return": 10.180037257061608,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 47,
+      "steps": 18448,
+      "return": -9.754095100648863,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 48,
+      "steps": 18948,
+      "return": 98.42573398215205,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 49,
+      "steps": 19448,
+      "return": 17.269184937719338,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 50,
+      "steps": 19948,
+      "return": 88.99790529506991,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 51,
+      "steps": 20500,
+      "return": 25.040127250192292,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 52,
+      "steps": 21000,
+      "return": 5.668789958588957,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 53,
+      "steps": 21500,
+      "return": 17.86509094889401,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 54,
+      "steps": 22000,
+      "return": 73.77260947988864,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 55,
+      "steps": 22500,
+      "return": -12.224661814595857,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 56,
+      "steps": 23000,
+      "return": 9.215589315427778,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 57,
+      "steps": 23500,
+      "return": 15.522135231840577,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 58,
+      "steps": 23707,
+      "return": -107.97362774047798,
+      "length": 207,
+      "outcome": "collision"
+    },
+    {
+      "episode": 59,
+      "steps": 23931,
+      "return": -118.77107391476393,
+      "length": 224,
+      "outcome": "collision"
+    },
+    {
+      "episode": 60,
+      "steps": 24431,
+      "return": -9.765403170956994,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 61,
+      "steps": 24931,
+      "return": 8.120497918184606,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 62,
+      "steps": 25125,
+      "return": -113.12698247029932,
+      "length": 194,
+      "outcome": "collision"
+    },
+    {
+      "episode": 63,
+      "steps": 25625,
+      "return": 10.149198497909225,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 64,
+      "steps": 25858,
+      "return": -114.02255530170413,
+      "length": 233,
+      "outcome": "collision"
+    },
+    {
+      "episode": 65,
+      "steps": 26358,
+      "return": 36.197727924174046,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 66,
+      "steps": 26858,
+      "return": 70.34151950801308,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 67,
+      "steps": 27358,
+      "return": 30.48184331345007,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 68,
+      "steps": 27858,
+      "return": 3.1120608785856203,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 69,
+      "steps": 28358,
+      "return": 1.1934775253939867,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 70,
+      "steps": 28858,
+      "return": 100.28867749666507,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 71,
+      "steps": 29117,
+      "return": -90.1320022289452,
+      "length": 259,
+      "outcome": "collision"
+    },
+    {
+      "episode": 72,
+      "steps": 29617,
+      "return": 13.36744612994722,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 73,
+      "steps": 30117,
+      "return": 66.54225135703514,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 74,
+      "steps": 30617,
+      "return": 41.82304163286171,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 75,
+      "steps": 31117,
+      "return": 52.59667207040191,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 76,
+      "steps": 31617,
+      "return": 15.622449327565,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 77,
+      "steps": 31793,
+      "return": -40.99781455230794,
+      "length": 176,
+      "outcome": "collision"
+    },
+    {
+      "episode": 78,
+      "steps": 31856,
+      "return": -67.29457501641485,
+      "length": 63,
+      "outcome": "collision"
+    },
+    {
+      "episode": 79,
+      "steps": 31931,
+      "return": -60.83038438165717,
+      "length": 75,
+      "outcome": "collision"
+    },
+    {
+      "episode": 80,
+      "steps": 32052,
+      "return": -61.08423976669098,
+      "length": 121,
+      "outcome": "collision"
+    },
+    {
+      "episode": 81,
+      "steps": 32428,
+      "return": 204.6362710197128,
+      "length": 376,
+      "outcome": "success"
+    },
+    {
+      "episode": 82,
+      "steps": 32623,
+      "return": 214.24138123210992,
+      "length": 195,
+      "outcome": "success"
+    },
+    {
+      "episode": 83,
+      "steps": 32777,
+      "return": 213.03756050697902,
+      "length": 154,
+      "outcome": "success"
+    },
+    {
+      "episode": 84,
+      "steps": 33277,
+      "return": 51.54232319894455,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 85,
+      "steps": 33777,
+      "return": 39.095049511687996,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 86,
+      "steps": 33931,
+      "return": 213.66914401143322,
+      "length": 154,
+      "outcome": "success"
+    },
+    {
+      "episode": 87,
+      "steps": 34085,
+      "return": 212.45277255135173,
+      "length": 154,
+      "outcome": "success"
+    },
+    {
+      "episode": 88,
+      "steps": 34285,
+      "return": 213.88959208820125,
+      "length": 200,
+      "outcome": "success"
+    },
+    {
+      "episode": 89,
+      "steps": 34580,
+      "return": 210.91414585106833,
+      "length": 295,
+      "outcome": "success"
+    },
+    {
+      "episode": 90,
+      "steps": 35080,
+      "return": 16.1679454063643,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 91,
+      "steps": 35243,
+      "return": 212.54224741904255,
+      "length": 163,
+      "outcome": "success"
+    },
+    {
+      "episode": 92,
+      "steps": 35402,
+      "return": 214.81004039386443,
+      "length": 159,
+      "outcome": "success"
+    },
+    {
+      "episode": 93,
+      "steps": 35562,
+      "return": 211.19760226446124,
+      "length": 160,
+      "outcome": "success"
+    },
+    {
+      "episode": 94,
+      "steps": 35721,
+      "return": 214.67127047888187,
+      "length": 159,
+      "outcome": "success"
+    },
+    {
+      "episode": 95,
+      "steps": 35878,
+      "return": 214.45210609604194,
+      "length": 157,
+      "outcome": "success"
+    },
+    {
+      "episode": 96,
+      "steps": 36378,
+      "return": 72.97889910978691,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 97,
+      "steps": 36535,
+      "return": 212.91319959027325,
+      "length": 157,
+      "outcome": "success"
+    },
+    {
+      "episode": 98,
+      "steps": 36915,
+      "return": 209.2175856011939,
+      "length": 380,
+      "outcome": "success"
+    },
+    {
+      "episode": 99,
+      "steps": 37415,
+      "return": 18.942744073487987,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 100,
+      "steps": 37907,
+      "return": 204.30285427347698,
+      "length": 492,
+      "outcome": "success"
+    },
+    {
+      "episode": 101,
+      "steps": 38407,
+      "return": 97.29635667657277,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 102,
+      "steps": 38907,
+      "return": 94.2533158497598,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 103,
+      "steps": 39407,
+      "return": 82.18644041645572,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 104,
+      "steps": 39907,
+      "return": 101.90458126941712,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 105,
+      "steps": 40060,
+      "return": 211.22218530959026,
+      "length": 153,
+      "outcome": "success"
+    },
+    {
+      "episode": 106,
+      "steps": 40436,
+      "return": -46.0460106770084,
+      "length": 376,
+      "outcome": "collision"
+    },
+    {
+      "episode": 107,
+      "steps": 40588,
+      "return": 211.3126405310595,
+      "length": 152,
+      "outcome": "success"
+    },
+    {
+      "episode": 108,
+      "steps": 40655,
+      "return": -61.17758481973345,
+      "length": 67,
+      "outcome": "collision"
+    },
+    {
+      "episode": 109,
+      "steps": 40727,
+      "return": -58.63968685648781,
+      "length": 72,
+      "outcome": "collision"
+    },
+    {
+      "episode": 110,
+      "steps": 40874,
+      "return": 211.27552103772223,
+      "length": 147,
+      "outcome": "success"
+    },
+    {
+      "episode": 111,
+      "steps": 40947,
+      "return": -59.1706200071031,
+      "length": 73,
+      "outcome": "collision"
+    },
+    {
+      "episode": 112,
+      "steps": 41447,
+      "return": 54.22033371774325,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 113,
+      "steps": 41514,
+      "return": -61.587456034063266,
+      "length": 67,
+      "outcome": "collision"
+    },
+    {
+      "episode": 114,
+      "steps": 41667,
+      "return": 213.8766418673254,
+      "length": 153,
+      "outcome": "success"
+    },
+    {
+      "episode": 115,
+      "steps": 41816,
+      "return": 213.83030540336534,
+      "length": 149,
+      "outcome": "success"
+    },
+    {
+      "episode": 116,
+      "steps": 42316,
+      "return": 72.83289897238619,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 117,
+      "steps": 42816,
+      "return": 48.15656503498334,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 118,
+      "steps": 42976,
+      "return": 213.19967694848316,
+      "length": 160,
+      "outcome": "success"
+    },
+    {
+      "episode": 119,
+      "steps": 43176,
+      "return": 210.02452279066387,
+      "length": 200,
+      "outcome": "success"
+    },
+    {
+      "episode": 120,
+      "steps": 43676,
+      "return": 88.29477973075139,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 121,
+      "steps": 44063,
+      "return": 209.44629711051613,
+      "length": 387,
+      "outcome": "success"
+    },
+    {
+      "episode": 122,
+      "steps": 44563,
+      "return": 39.80779257997987,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 123,
+      "steps": 45063,
+      "return": 42.72393281671075,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 124,
+      "steps": 45213,
+      "return": 211.5731324884757,
+      "length": 150,
+      "outcome": "success"
+    },
+    {
+      "episode": 125,
+      "steps": 45351,
+      "return": 215.5867359763776,
+      "length": 138,
+      "outcome": "success"
+    },
+    {
+      "episode": 126,
+      "steps": 45501,
+      "return": 211.0885557250947,
+      "length": 150,
+      "outcome": "success"
+    },
+    {
+      "episode": 127,
+      "steps": 45643,
+      "return": 212.09487019635793,
+      "length": 142,
+      "outcome": "success"
+    },
+    {
+      "episode": 128,
+      "steps": 45788,
+      "return": 216.06739932319329,
+      "length": 145,
+      "outcome": "success"
+    },
+    {
+      "episode": 129,
+      "steps": 45941,
+      "return": 214.07174092583261,
+      "length": 153,
+      "outcome": "success"
+    },
+    {
+      "episode": 130,
+      "steps": 46088,
+      "return": 214.79819527302504,
+      "length": 147,
+      "outcome": "success"
+    },
+    {
+      "episode": 131,
+      "steps": 46588,
+      "return": 47.153838245757896,
+      "length": 500,
+      "outcome": "timeout"
+    },
+    {
+      "episode": 132,
+      "steps": 46736,
+      "return": 215.42726249825137,
+      "length": 148,
+      "outcome": "success"
+    },
+    {
+      "episode": 133,
+      "steps": 46876,
+      "return": 214.7012938959072,
+      "length": 140,
+      "outcome": "success"
+    },
+    {
+      "episode": 134,
+      "steps": 47028,
+      "return": 213.99910783265904,
+      "length": 152,
+      "outcome": "success"
+    },
+    {
+      "episode": 135,
+      "steps": 47177,
+      "return": 217.12672217849905,
+      "length": 149,
+      "outcome": "success"
+    },
+    {
+      "episode": 136,
+      "steps": 47329,
+      "return": 215.04004133312503,
+      "length": 152,
+      "outcome": "success"
+    },
+    {
+      "episode": 137,
+      "steps": 47481,
+      "return": 212.41694217921258,
+      "length": 152,
+      "outcome": "success"
+    },
+    {
+      "episode": 138,
+      "steps": 47621,
+      "return": 214.66186120721162,
+      "length": 140,
+      "outcome": "success"
+    },
+    {
+      "episode": 139,
+      "steps": 47774,
+      "return": 211.85332170314177,
+      "length": 153,
+      "outcome": "success"
+    },
+    {
+      "episode": 140,
+      "steps": 47922,
+      "return": 216.08840145855254,
+      "length": 148,
+      "outcome": "success"
+    },
+    {
+      "episode": 141,
+      "steps": 48060,
+      "return": 215.67486816998553,
+      "length": 138,
+      "outcome": "success"
+    },
+    {
+      "episode": 142,
+      "steps": 48199,
+      "return": 214.56013352456506,
+      "length": 139,
+      "outcome": "success"
+    },
+    {
+      "episode": 143,
+      "steps": 48351,
+      "return": 211.92882264631842,
+      "length": 152,
+      "outcome": "success"
+    },
+    {
+      "episode": 144,
+      "steps": 48503,
+      "return": 216.91037693500738,
+      "length": 152,
+      "outcome": "success"
+    },
+    {
+      "episode": 145,
+      "steps": 48650,
+      "return": 217.50763309432472,
+      "length": 147,
+      "outcome": "success"
+    },
+    {
+      "episode": 146,
+      "steps": 48794,
+      "return": 212.88362301407045,
+      "length": 144,
+      "outcome": "success"
+    },
+    {
+      "episode": 147,
+      "steps": 48934,
+      "return": 214.23664866008647,
+      "length": 140,
+      "outcome": "success"
+    },
+    {
+      "episode": 148,
+      "steps": 49083,
+      "return": 214.23420164145995,
+      "length": 149,
+      "outcome": "success"
+    },
+    {
+      "episode": 149,
+      "steps": 49226,
+      "return": 216.0312536817868,
+      "length": 143,
+      "outcome": "success"
+    },
+    {
+      "episode": 150,
+      "steps": 49378,
+      "return": 211.6969001115923,
+      "length": 152,
+      "outcome": "success"
+    },
+    {
+      "episode": 151,
+      "steps": 49526,
+      "return": 213.85846465195215,
+      "length": 148,
+      "outcome": "success"
+    },
+    {
+      "episode": 152,
+      "steps": 49665,
+      "return": 213.44404228918944,
+      "length": 139,
+      "outcome": "success"
+    },
+    {
+      "episode": 153,
+      "steps": 49807,
+      "return": 215.90460634420293,
+      "length": 142,
+      "outcome": "success"
+    },
+    {
+      "episode": 154,
+      "steps": 49946,
+      "return": 213.01293138323467,
+      "length": 139,
+      "outcome": "success"
+    }
+  ],
+  "evaluation": {
+    "controller": "td3",
+    "episodes": 10,
+    "success_rate": 1.0,
+    "collision_rate": 0.0,
+    "timeout_rate": 0.0,
+    "mean_return": 214.57292366518308,
+    "mean_steps": 144.8,
+    "seed": 10007,
+    "training_steps": 50000,
+    "scenario": "reef",
+    "records": [
+      {
+        "return": 214.83541455188865,
+        "steps": 140,
+        "outcome": "success"
+      },
+      {
+        "return": 215.46384988036826,
+        "steps": 143,
+        "outcome": "success"
+      },
+      {
+        "return": 214.22329992861845,
+        "steps": 142,
+        "outcome": "success"
+      },
+      {
+        "return": 217.58226254419748,
+        "steps": 151,
+        "outcome": "success"
+      },
+      {
+        "return": 211.9221644563538,
+        "steps": 144,
+        "outcome": "success"
+      },
+      {
+        "return": 215.35275600513336,
+        "steps": 150,
+        "outcome": "success"
+      },
+      {
+        "return": 214.72363620232164,
+        "steps": 142,
+        "outcome": "success"
+      },
+      {
+        "return": 215.06536180576308,
+        "steps": 137,
+        "outcome": "success"
+      },
+      {
+        "return": 213.19300063160227,
+        "steps": 147,
+        "outcome": "success"
+      },
+      {
+        "return": 213.36749064558393,
+        "steps": 152,
+        "outcome": "success"
+      }
+    ]
+  },
+  "limitations": "2D kinematics; no validated hydrodynamics or hardware model."
+}

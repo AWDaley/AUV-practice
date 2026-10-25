@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#09151f">
+  <title>AUV Lab · TD3 navigation simulator</title>
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#simulation">Skip to simulator</a>
+  <div class="app-shell">
+    <header class="masthead">
+      <a class="brand" href="/" aria-label="AUV Lab home">
+        <span class="brand-mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M7 23 16 5l9 18-9-5z"/><path d="M7 28h18"/></svg></span>
+        <span>AUV<span class="brand-light">LAB</span><span class="brand-divider">/</span><span class="brand-detail">Navigation sandbox</span></span>
+      </a>
+      <div class="connection" id="connection-status" role="status" aria-live="polite"><span class="status-dot"></span><span id="connection-text">Connecting</span></div>
+    </header>
+
+    <section class="intro" aria-labelledby="page-title">
+      <div><p class="eyebrow">EXPLORE · TRAIN · COMPARE</p><h1 id="page-title">A small ocean. A real learning loop.</h1><p class="intro-copy">Explore with a map-aware baseline, then train a TD3 policy to navigate from local observations.</p></div>
+      <div class="local-tag"><span class="tiny-square" aria-hidden="true"></span> Local simulation <span class="tag-divider">/</span> 2D</div>
+    </section>
+
+    <div id="error-banner" class="error-banner" role="alert" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 10 18H2L12 3Z"/><path d="M12 9v5m0 3v.1"/></svg><span id="error-text"></span><button id="dismiss-error" type="button" aria-label="Dismiss error">×</button></div>
+    <div class="run-status" id="run-status"><span id="mode-pill" class="mode-pill">WAITING</span><span id="run-message" role="status" aria-live="polite">Waiting for the simulator.</span><span id="policy-status" class="policy-status">TD3 · untrained</span></div>
+
+    <main>
+      <div class="workspace">
+        <div class="main-column">
+          <section class="panel tank-panel" id="simulation" aria-labelledby="tank-title">
+            <div class="panel-heading tank-heading"><div><p class="section-kicker">ENVIRONMENT</p><h2 id="tank-title">Live tank <span id="scenario-label" class="subtle-badge">—</span></h2></div><div class="episode-counter"><span>Episode step</span><strong id="episode-step">0</strong></div></div>
+            <div class="tank-wrap" id="tank-wrap">
+              <canvas id="tank-canvas" role="img" aria-label="Two-dimensional AUV navigation tank. Waiting for environment data.">The live simulation requires a browser with canvas support.</canvas>
+              <div class="tank-corner-label"><span class="mini-dot" aria-hidden="true"></span><span id="active-controller">Waiting for simulator</span></div>
+              <div id="tank-loading" class="tank-loading"><span class="loading-orbit" aria-hidden="true"></span><span>Connecting to the tank</span></div>
+              <div class="tank-legend" aria-hidden="true"><span><i class="legend-vehicle"></i>AUV</span><span><i class="legend-goal"></i>Goal</span><span><i class="legend-obstacle"></i>Obstacle</span><span><i class="legend-path"></i>Path</span></div>
+            </div>
+            <div class="view-options"><span class="view-label">SHOW</span><label><input id="show-sonar" type="checkbox" checked> Sonar</label><label><input id="show-trail" type="checkbox" checked> Path</label><label><input id="show-current" type="checkbox" checked> Current</label><span id="current-vector" class="current-readout">Current —</span></div>
+            <div class="transport">
+              <div class="controller-field"><label for="controller">Preview controller</label><select id="controller"><option value="baseline">Map-aware baseline</option><option value="td3">TD3 policy</option><option value="random">Random actions</option></select></div>
+              <div class="transport-buttons"><button class="button button-primary play-button" id="play-button" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 3 11 7-11 7z"/></svg><span id="play-label">Play</span></button><button class="button button-secondary icon-button" id="pause-button" type="button" aria-label="Pause simulation and training" title="Pause simulation and training"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 4h3v12H5zm7 0h3v12h-3z"/></svg></button><button class="button button-secondary icon-button" id="step-button" type="button" aria-label="Advance one simulation step" title="Advance one simulation step"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m3 4 9 6-9 6zM14 4h3v12h-3z"/></svg></button></div>
+              <div class="speed-field"><label for="preview-speed">Speed</label><select id="preview-speed"><option value="1">1×</option><option value="4" selected>4×</option><option value="12">12×</option></select></div>
+            </div>
+            <p class="controller-note" id="controller-note">Hand-written baseline with access to the obstacle map. TD3 uses local observations; this is a demonstration, not a fair learned-policy benchmark.</p>
+            <div class="live-metrics">
+              <div><span>Episode return</span><strong id="episode-return">—</strong><small>Cumulative reward</small></div>
+              <div><span>Goal distance</span><strong id="goal-distance">—</strong><small>metres</small></div>
+              <div><span>Vehicle speed</span><strong id="vehicle-speed">—</strong><small>metres / second</small></div>
+              <div><span>Min. clearance</span><strong id="min-clearance">—</strong><small>metres</small></div>
+            </div>
+          </section>
+
+          <section class="panel learning-panel" aria-labelledby="learning-title">
+            <div class="panel-heading"><div><p class="section-kicker">TRAINING HISTORY</p><h2 id="learning-title">Learning, episode by episode</h2></div><span class="subtle-badge" id="history-count">0 episodes</span></div>
+            <p class="panel-description" id="history-window-note">Completed TD3 training episodes. Preview and evaluation runs are separate.</p>
+            <div class="chart-grid">
+              <div class="chart-block"><div class="chart-title"><h3>Episode return</h3><span>Higher is better</span></div><div class="chart-wrap"><canvas id="return-chart" role="img" aria-label="Episode return chart. No completed training episodes yet."></canvas><div id="return-empty" class="chart-empty">Training data will appear here.</div></div><div class="chart-key"><span><i class="key-line teal"></i>Return</span><span><i class="key-line muted"></i>10-episode mean</span></div></div>
+              <div class="chart-block"><div class="chart-title"><h3>Episode outcomes</h3><span>Rolling 20 episodes</span></div><div class="chart-wrap"><canvas id="outcome-chart" role="img" aria-label="Rolling success and collision rates. No completed training episodes yet."></canvas><div id="outcome-empty" class="chart-empty">Complete an episode to see outcomes.</div></div><div class="chart-key"><span><i class="key-line teal"></i>Reached goal</span><span><i class="key-line coral"></i>Collision</span></div></div>
+            </div>
+            <div class="history-summary"><span>Latest outcome <strong id="last-outcome">—</strong></span><span>Completed <strong id="completed-episodes">0</strong></span><span>History success <strong id="history-success">—</strong></span></div>
+          </section>
+
+          <div class="diagnostics-grid">
+            <section class="panel telemetry-panel" aria-labelledby="telemetry-title"><div class="panel-heading"><div><p class="section-kicker">INSIDE TD3</p><h2 id="telemetry-title">Training telemetry</h2></div><span class="subtle-badge" id="training-phase">Not started</span></div><div class="telemetry-grid"><div><span>Critic updates</span><strong id="critic-updates">0</strong></div><div><span>Actor updates</span><strong id="actor-updates">0</strong></div><div><span>Replay samples</span><strong id="buffer-size">0</strong></div><div><span>Steps / second</span><strong id="steps-per-second">—</strong></div><div><span>Batch Q1</span><strong id="q1">—</strong></div><div><span>Batch Q2</span><strong id="q2">—</strong></div><div><span>TD error</span><strong id="td-error">—</strong></div><div><span>Critic loss</span><strong id="critic-loss">—</strong></div><div><span>Actor loss</span><strong id="actor-loss">—</strong></div></div><p class="fine-print">Q values and losses describe sampled training batches. They are not safety scores.</p></section>
+            <section class="panel reward-panel" aria-labelledby="reward-title"><div class="panel-heading"><div><p class="section-kicker">LAST TRANSITION</p><h2 id="reward-title">Reward breakdown</h2></div><strong id="last-reward" class="reward-total">—</strong></div><div id="reward-terms" class="reward-terms"><p class="empty-copy">Take a step to inspect the reward terms.</p></div><div class="action-readout"><div><span id="action-1-label">Action 1</span><strong id="action-1">—</strong></div><div><span id="action-2-label">Action 2</span><strong id="action-2">—</strong></div></div><p class="fine-print">The reward encourages useful behaviour. It does not guarantee collision avoidance.</p></section>
+          </div>
+        </div>
+
+        <aside class="control-column" aria-label="Experiment controls">
+          <section class="panel control-panel" aria-labelledby="experiment-title"><div class="panel-heading"><div><p class="section-kicker">01 / SET THE SCENE</p><h2 id="experiment-title">Experiment</h2></div><svg class="section-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 17h16M9 4v6m7 4v6"/></svg></div><div class="form-stack"><div class="field"><label for="scenario">Environment</label><select id="scenario"><option value="open">Open water</option><option value="reef" selected>Reef field</option><option value="channel">Narrow channel</option></select></div><div class="field-pair"><div class="field"><label for="seed">Random seed</label><input id="seed" type="number" min="0" max="2147483647" step="1" value="7" inputmode="numeric" required></div><div class="field"><label for="current-strength">Current <span class="label-unit">m/s</span></label><input id="current-strength" type="number" min="0" max="0.4" step="0.01" value="0.08" inputmode="decimal" required></div></div><div id="config-dirty" class="config-dirty" hidden>Settings changed. Reset to apply.</div><button id="reset-button" class="button button-outline full-width" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M4 6a7 7 0 1 1-1 7M4 2v5h5"/></svg>Reset experiment</button><p class="fine-print reset-note">Starts fresh and clears learned weights, replay memory, and training history. Save a checkpoint first to keep a policy.</p></div></section>
+
+          <section class="panel control-panel trainer-panel" aria-labelledby="trainer-title"><div class="panel-heading"><div><p class="section-kicker">02 / LEARN BY DOING</p><h2 id="trainer-title">Train TD3</h2></div><span class="algorithm-tag">ACTOR + 2 CRITICS</span></div><p class="panel-description">TD3 starts untrained. Each run adds experience and updates the same policy.</p><div class="form-stack"><div class="field"><label for="training-steps">Additional environment steps</label><input id="training-steps" type="number" min="1" max="1000000" step="1" value="10000" inputmode="numeric" required><span class="field-hint">10,000 is a short practice run, not a performance guarantee.</span></div><div class="field"><div class="label-row"><label for="exploration-noise">Exploration noise</label><output id="noise-output" for="exploration-noise">0.10</output></div><input id="exploration-noise" type="range" min="0" max="0.5" step="0.01" value="0.1"><span class="field-hint">Noise added to actions during training.</span></div><button id="train-button" class="button button-primary full-width" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m11 2-7 9h5l-1 7 8-10h-5z"/></svg><span id="train-label">Train policy</span></button></div><div class="training-progress"><div><span id="progress-label">Training steps</span><strong id="training-progress-text">0 / 0</strong></div><progress id="training-progress" max="1" value="0" aria-label="Cumulative training step progress"></progress><div class="progress-caption"><span id="training-caption">Ready for the first run</span><span id="training-percent">0%</span></div></div></section>
+
+          <section class="panel control-panel" aria-labelledby="evaluation-title"><div class="panel-heading"><div><p class="section-kicker">03 / CHECK THE RESULT</p><h2 id="evaluation-title">Evaluate</h2></div><svg class="section-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V12m8 8V4m8 16v-9M2 20h20"/></svg></div><p class="panel-description">Test the selected controller across fresh episodes. TD3 evaluation uses no exploration noise.</p><div class="evaluation-controls"><div class="field"><label for="evaluation-episodes">Episodes</label><select id="evaluation-episodes"><option value="5">5 episodes</option><option value="10" selected>10 episodes</option><option value="20">20 episodes</option><option value="50">50 episodes</option></select></div><button id="evaluate-button" class="button button-secondary" type="button">Evaluate</button></div><p class="field-hint eval-controller">Controller: <strong id="evaluation-controller">Steering baseline</strong></p><div id="evaluation-empty" class="evaluation-empty">No evaluation yet.</div><div id="evaluation-results" hidden><div class="evaluation-result-heading"><span id="evaluated-controller">—</span><span id="evaluated-episodes">—</span></div><div class="evaluation-metrics"><div><span>Reached goal</span><strong id="eval-success" class="text-teal">—</strong></div><div><span>Collision</span><strong id="eval-collision">—</strong></div><div><span>Mean return</span><strong id="eval-return">—</strong></div><div><span>Mean steps</span><strong id="eval-steps">—</strong></div></div><p id="evaluation-seed" class="fine-print"></p></div></section>
+
+          <section class="panel control-panel checkpoint-panel" aria-labelledby="checkpoint-title"><div class="panel-heading"><div><p class="section-kicker">KEEP YOUR PROGRESS</p><h2 id="checkpoint-title">Checkpoints</h2></div><svg class="section-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 3h13l3 3v15H3V3h2Zm2 0v7h10V3M7 21v-7h10v7"/></svg></div><button id="save-button" class="button button-secondary full-width" type="button">Save current policy</button><div class="checkpoint-load"><div class="field"><label for="checkpoint-select">Saved policy</label><select id="checkpoint-select" disabled><option value="">No checkpoints yet</option></select></div><button id="load-button" class="button button-outline" type="button" disabled>Load</button></div><p class="fine-print">Save or load while paused. To try the included reef policy, select <strong>td3-demo-reef-50000.pt</strong>, click Load, then Play TD3. It was trained for 50,000 steps. Reset experiment to learn from scratch.</p></section>
+        </aside>
+      </div>
+    </main>
+
+    <footer class="footer"><span><span class="footer-dot" aria-hidden="true"></span> AUV Lab <span class="footer-separator">/</span> Learn the algorithm. Inspect the behaviour.</span><span>Educational 2D simulator · Not a vehicle deployment model</span></footer>
+  </div>
+</body>
+</html>
