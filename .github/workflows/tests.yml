@@ -1,4 +1,4 @@
-name: Python tests
+name: Simulator tests
 
 on:
   push:
@@ -22,3 +22,20 @@ jobs:
           python -m pip install -e ".[dev]"
       - name: Run tests
         run: python -m pytest
+      - name: Verify the committed standalone HTML matches its sources
+        run: |
+          python scripts/build_html.py
+          git diff --exit-code -- auv-practice.html
+  browser-core:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Run JavaScript environment, TD3, parity, and lifecycle tests
+        run: |
+          node tests/browser_environment.cjs
+          node tests/browser_td3.cjs
+          node tests/browser_parity.cjs
+          node tests/browser_lifecycle.cjs

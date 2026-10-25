@@ -1,0 +1,88 @@
+{
+  "browser": "134.0.6998.35",
+  "protocol": "file://",
+  "offline": true,
+  "network_requests": 0,
+  "page_errors": 0,
+  "evaluation": {
+    "controller": "td3",
+    "episodes": 10,
+    "success_rate": 1,
+    "collision_rate": 0,
+    "timeout_rate": 0,
+    "mean_return": 213.57203588012598,
+    "mean_steps": 144.8,
+    "seed": 10007,
+    "training_steps": 50000,
+    "scenario": "reef",
+    "engine": "JavaScript",
+    "records": [
+      {
+        "return": 213.61739598787472,
+        "steps": 150,
+        "outcome": "success"
+      },
+      {
+        "return": 214.16249674186656,
+        "steps": 139,
+        "outcome": "success"
+      },
+      {
+        "return": 211.2756621249649,
+        "steps": 149,
+        "outcome": "success"
+      },
+      {
+        "return": 215.78805937879676,
+        "steps": 150,
+        "outcome": "success"
+      },
+      {
+        "return": 215.0622953747664,
+        "steps": 151,
+        "outcome": "success"
+      },
+      {
+        "return": 213.7038172367939,
+        "steps": 140,
+        "outcome": "success"
+      },
+      {
+        "return": 213.8043785863427,
+        "steps": 145,
+        "outcome": "success"
+      },
+      {
+        "return": 214.40251482757247,
+        "steps": 137,
+        "outcome": "success"
+      },
+      {
+        "return": 212.14445040498578,
+        "steps": 140,
+        "outcome": "success"
+      },
+      {
+        "return": 211.75928813729553,
+        "steps": 147,
+        "outcome": "success"
+      }
+    ]
+  },
+  "fresh_training": {
+    "steps": 1200,
+    "critic_updates": 200,
+    "actor_updates": 100,
+    "critic_loss": 0.1698852732433005,
+    "actor_loss": 0.2408007575354816
+  },
+  "checkpoint_download_and_import": true,
+  "result_export": true,
+  "invalid_import_preserved_model": true,
+  "pause_response_ms": 98,
+  "default_preview_outcome": "success",
+  "mobile": {
+    "width": 390,
+    "document": 390
+  }
+}

@@ -2,11 +2,65 @@
 
 **Watch a simulated underwater vehicle move, train a real TD3 policy, and inspect what it learns.**
 
-A local Python/PyTorch learning lab with a browser interface. Start with a map-aware steering demonstration, then train an initially untrained actor with two critics. The world view shows the vehicle, sonar rays, obstacles, current, goal, and trajectory. The inspector shows actual rewards, replay size, update counts, losses, and episode returns.
+## Start here: open the single HTML file
 
-This first version is a **2D educational simulator** with simplified motion. It is not a hydrodynamic simulator or an exact reproduction of the three Ocean Engineering AUV studies. A real 50,000-step TD3 checkpoint is included for immediate playback; the default experiment starts with fresh weights so you can also observe learning from scratch.
+**Download [auv-practice.html](auv-practice.html), save it to your computer, and open it in a browser.** That one file contains the interface, simulator, JavaScript TD3 learner, and a real trained example. Opening and using it requires **no packages, Python, Node, server, API keys, or network connection** after the file has been downloaded.
 
-## Start on Windows
+On GitHub, open the file and use **Download raw file**. Open the saved `.html` in a browser tab; GitHub's source viewer does not run the app.
+
+The included reef policy is loaded and paused at startup. Wait for **Browser engine ready**, then press **Play**. Use **Pause** or single-step to inspect the vehicle, sonar rays, obstacles, current, goal, trajectory, and actual reward terms. The inspector shows replay size, update counts, losses, and episode returns.
+
+The example was trained with real TD3 updates for 50,000 cumulative interactions in the Python implementation. Its weights and recorded history are embedded in the HTML; those initial charts describe prior training. **Reset experiment** starts a fresh, untrained JavaScript learner. All simulation and browser training run on your device, and speed depends on its hardware.
+
+This is a **2D educational simulator** with simplified motion. It is not a hydrodynamic simulator or an exact reproduction of the three Ocean Engineering AUV studies.
+
+### Two supported workflows
+
+| Workflow | Start | Use |
+| --- | --- | --- |
+| **Single-file browser app** | Open `auv-practice.html` directly | Immediate offline playback, experiments, and genuine JavaScript TD3 training |
+| **Python/PyTorch app** | Install the project and run `python -m auv_sim` | Python development, headless training, and the local FastAPI interface |
+
+The implementations have different defaults, checkpoint formats, and random sequences. See the [browser guide](docs/BROWSER.md) for the offline workflow and the [Python setup](#python-implementation-optional) below for the server-based implementation.
+
+### Your first browser experiment
+
+1. **Try the included policy.** Press **Play** with **TD3 policy** selected. Preview uses the actor without exploration noise or training updates.
+2. **Evaluate it.** Pause, choose an episode count, and click **Evaluate**. The app measures success, collisions, mean return, and episode length on its fixed JavaScript seed sequence. Evaluation does not update the model or replay.
+3. **Start fresh.** Choose Open water, Reef field, or Narrow channel; set the seed and current; then click **Reset experiment**. Reset clears the active learner, replay, training history, and evaluation. Saved entries remain in the current tab's checkpoint list.
+4. **Train.** Request the default **2,000 additional environment steps** as a short practice run. The first 1,000 cumulative training transitions use random commands. After warm-up, the actor collects with exploration noise and the learner updates from replay.
+5. **Inspect and compare.** Watch actual returns, outcomes, losses, and update counts. Pause to preview or evaluate again. A short run demonstrates learning mechanics; it does not guarantee successful navigation.
+6. **Keep your work.** Use **Save & download policy** while paused for model JSON, or **Export results** for a separate JSON record of settings, metrics, retained history, and evaluation.
+
+**Checkpoint entries and unsaved learning belong to the current tab.** Keep the downloaded checkpoint JSON before closing or reloading. On a later opening, **Import checkpoint** reads that JSON and loads the model immediately. It accepts browser checkpoint JSON up to 8 MiB, not Python `.pt` files. The original HTML remains the complete application; model and results downloads are optional outputs.
+
+To return to the included example after a reset, select `td3-demo-reef-50000.json` and click **Load**. Reopening the HTML also restores the embedded example.
+
+The **Map-aware baseline** is a separate, hand-written A* route planner with steering rules and access to the full obstacle map. TD3 receives local observations. The baseline is a demonstration/reference, not an equal-information benchmark.
+
+### Browser learning and checkpoint limits
+
+The learner performs forward passes, backpropagation, Adam updates, replay sampling, and the TD3 update in JavaScript inside an embedded **Blob Web Worker**. Training is real; the page is not a pre-recorded animation or a remote inference client.
+
+| Setting | Fresh browser model | Included model in browser | Python default |
+| --- | --- | --- | --- |
+| Hidden layers in actor and each critic | 64 → 64 | 128 → 128 | 128 → 128 |
+| Training batch size | 32 | 32 for continued learning | 128 |
+| Replay capacity | 50,000 | 50,000 | 100,000 |
+| Initial state | Created by Reset | Loaded and paused at startup | Fresh model at startup |
+| Checkpoint format | Browser JSON | Browser JSON | PyTorch `.pt` |
+
+Both paths use twin critics, clipped target-action noise, delayed actor/target updates, slowly updated target networks, uniform replay, and a bootstrap mask that distinguishes true termination from an external time limit.
+
+Loading restores a useful model and learner state, but **is not exact training resumption**. Replay, simulator state, and rollout random streams restart. Already-trained models collect with their actor plus exploration noise and resume updates once fresh replay contains a batch; completed warm-up is not repeated. JavaScript seeded sequences differ from NumPy's, and the imported model uses a smaller browser batch than its original Python training. Matching a seed does not reproduce the original Python trajectory.
+
+The recorded offline browser check opened the file with networking disabled, observed **zero network requests and page errors**, and verified real updates, checkpoint download/import, result export, and mobile layout. The included model reached 10/10 goals in one fixed JavaScript reef evaluation. See [browser validation and its limits](docs/BROWSER.md#recorded-browser-validation) and [the recorded JSON report](docs/browser-validation.json); this is a small diagnostic, not a general navigation guarantee.
+
+## Python implementation (optional)
+
+This path retains the original Python/PyTorch simulator, headless commands, and local server. It is separate from opening the standalone HTML.
+
+### Start on Windows
 
 Install **Python 3.11 or 3.12** (3.12 was used for validation), then clone or download this repository.
 
@@ -21,9 +75,9 @@ py -3 -m venv .venv
 .\.venv\Scripts\python -m auv_sim
 ```
 
-You do not need to activate the virtual environment or change PowerShell execution policy. Opening `index.html` directly does not start the Python simulator.
+You do not need to activate the virtual environment or change PowerShell execution policy. Opening `auv_sim/static/index.html` directly does not start the Python simulator; use the root-level `auv-practice.html` for the standalone application.
 
-## Start on macOS or Linux
+### Start on macOS or Linux
 
 ```bash
 python3 -m venv .venv
@@ -35,7 +89,7 @@ python3 -m venv .venv
 
 Open **http://127.0.0.1:8000**. The app needs no API keys, external AI services, Node installation, or GPU. It runs locally after package installation. If port 8000 is occupied, use `python -m auv_sim serve --port 8001` with your environment's Python executable.
 
-## Your first experiment
+### Your first Python experiment
 
 **To watch trained TD3 immediately:** open **Checkpoints**, choose `td3-demo-reef-50000.pt`, and click **Load**. The controller switches to TD3. Click **Play** to watch it, or **Evaluate** to run the fixed test suite. This checkpoint achieved 10/10 goal arrivals in the recorded reef evaluation; that small test is not a guarantee on other conditions. See [validation results](docs/VALIDATION.md) for the exact training procedure and limits.
 
@@ -52,7 +106,7 @@ Use **Open water** to learn the basic control task, **Reef** for scattered obsta
 
 Training is intentionally CPU-friendly: two hidden layers of 128 units, one PyTorch thread, a 100,000-transition float32 buffer, and a batch size of 128. The network width and warm-up budget differ from the reference repository discussed in the source-code guide; the TD3 learning mechanisms are retained.
 
-## What is actually implemented
+### Python learner and checkpoints
 
 | Component | Behavior |
 | --- | --- |
@@ -69,7 +123,7 @@ Checkpoints **do not save replay, rollout RNG, or the full simulator state**. Lo
 
 Prioritized replay, N-step returns, C-APF guidance, adaptive research-specific noise schedules, moving obstacles, and 3D dynamics are **future extensions**. They are not represented as implemented paper results.
 
-## Headless training and evaluation
+### Headless Python training and evaluation
 
 After installation, using the virtual environment's Python:
 
@@ -81,23 +135,53 @@ python -m auv_sim --help
 
 Training prints the resulting checkpoint filename. To evaluate a saved model, supply that filename to `python -m auv_sim evaluate --checkpoint NAME.pt`. Checkpoint names must be files in the selected `--data-dir` (default `runs`). Loading uses the checkpoint's scenario, seed, and current configuration. `train --load NAME.pt --steps 20000` continues from a saved learner with fresh replay.
 
-The CLI saves `runs/latest-results.json` with configuration, measured metrics, recent episode history, and evaluation results. The browser also exposes the current metrics at `/api/results`. `runs/` is ignored by Git.
+The CLI saves `runs/latest-results.json` with configuration, measured metrics, recent episode history, and evaluation results. The Python server exposes current metrics at `/api/results`. In the standalone app, use **Export results**; its `/api/...` names are internal worker messages, not HTTP requests. `runs/` is ignored by Git.
 
 ## Source map
 
 | File | Responsibility |
 | --- | --- |
+| `auv-practice.html` | Complete offline application, including the trained example |
+| `web_src/environment.js` | JavaScript motion, courses, sonar, geometry, rewards, and baseline |
+| `web_src/td3.js` | JavaScript networks, gradients, Adam, replay, TD3 updates, and serialization |
+| `web_src/worker.js` | Browser preview, training, evaluation, and in-tab checkpoints |
+| `web_src/bridge.js` | Embedded Blob Worker, message handling, and JSON downloads |
+| `web_src/ui.html`, `web_src/ui.js` | Offline template, controls, canvas, charts, and telemetry |
+| `scripts/build_html.py` | Model export and assembly of the single HTML file |
 | `auv_sim/environment.py` | Motion, seeded courses, ray observations, swept collision tests, rewards, baseline |
 | `auv_sim/td3.py` | Neural networks, replay, TD3 update, learner checkpoint state |
 | `auv_sim/experiment.py` | Training/preview/evaluation lifecycles and synchronization |
 | `auv_sim/server.py` | Validated local API and static interface hosting |
-| `auv_sim/static/` | Canvas renderer, controls, real-data charts, and telemetry |
+| `auv_sim/static/` | Python frontend; its stylesheet is also embedded in the offline HTML |
 | `auv_sim/__main__.py` | Browser-server and headless commands |
-| `tests/` | Algorithm, environment, checkpoint, lifecycle, and API tests |
+| `tests/` | JavaScript and Python algorithm, environment, checkpoint, and lifecycle tests |
 
-See [the simulation specification](docs/SIMULATION.md) for observation/action definitions, reward terms, and limitations, and [the development notes](docs/DEVELOPMENT.md) for testing and extension points.
+See [the browser guide](docs/BROWSER.md), [simulation specification](docs/SIMULATION.md), and [Python development notes](docs/DEVELOPMENT.md) for behavior, assumptions, and extension points.
+
+## Rebuild the single file
+
+From the repository root, using the project's Python/PyTorch environment:
+
+```bash
+python scripts/build_html.py
+```
+
+The builder uses Python, NumPy, and PyTorch to export the bundled model and inline the source, CSS, and model into `auv-practice.html`. There is no Node/npm bundler or CDN step. These dependencies are **not needed to open the generated HTML**. See [browser source and rebuilding](docs/BROWSER.md#source-and-rebuilding) for details.
 
 ## Run the tests
+
+JavaScript tests use Node's built-in runner:
+
+```bash
+node tests/browser_environment.cjs
+node tests/browser_td3.cjs
+node tests/browser_parity.cjs
+node tests/browser_lifecycle.cjs
+```
+
+Node is needed only for these development tests, not to open or train in the HTML. The optional browser automation script `scripts/check_browser.cjs` additionally uses Playwright. See the [browser guide](docs/BROWSER.md#tests) for its scope.
+
+For the Python implementation:
 
 ```bash
 python -m pip install -e ".[dev]"
