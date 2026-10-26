@@ -7,16 +7,27 @@ const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 const { chromium } = require(process.env.AUV_PLAYWRIGHT_MODULE || "playwright");
 const root = path.resolve(__dirname, "..");
-const artifacts = path.join(root, "playwright-artifacts", "walkthrough");
+const artifacts = path.join(root, "playwright-artifacts", "walkthrough-python-reference");
 fs.mkdirSync(artifacts, { recursive: true });
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+const referenceRevision = "34770ccdcb51df6f6c7d85c1ba7e40d71b940d16";
+const referenceFiles = new Map();
+function fileLines(file) {
+  if (!referenceFiles.has(file)) {
+    const relative = /^(TD3|main|utils)\.py$/.test(file) ? `third_party/sfujim_td3/${file}` : file;
+    referenceFiles.set(file, fs.readFileSync(path.join(root, relative), "utf8").split(/\r?\n/));
+  }
+  return referenceFiles.get(file);
+}
 
 (async () => {
   const browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
   try {
-    const context = await browser.newContext({ offline: true, viewport: { width: 1440, height: 1100 } });
+    const context = await browser.newContext({ offline: true, viewport: { width: 1366, height: 768 } });
     const page = await context.newPage();
     const errors = [], requests = [], stages = new Set();
+    const layout = {};
+    const sourceBlocks = {};
     page.on("pageerror", error => errors.push(error.message));
     context.on("request", request => { if (/^https?:/.test(request.url())) requests.push(request.url()); });
     const state = () => page.evaluate(() => window.auvRequest("/api/state"));
@@ -36,9 +47,10 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
         value.trace.sequence);
       stages.add(value.trace.stage.key);
       assert.equal(await page.locator("#trace-panel").getAttribute("data-stage"), value.trace.stage.key);
-      assert.ok((await page.locator("#trace-code").innerText()).trim().length > 0, "Executed block is empty");
+      assert.ok((await page.locator("#trace-code").innerText()).trim().length > 0, "Source block is empty");
       assert.ok(!(await page.locator("#trace-code").innerText()).includes("Source unavailable"));
-      assert.match(await page.locator("#trace-source-file").innerText(), /^web_src\/(worker|td3|environment)\.js/);
+      const language = await verifySourceProvenance();
+      sourceBlocks[`${language}:${value.trace.stage.key}`] = await wholeSourceContained();
       return value;
     }
     async function advance(button = "#trace-next") {
@@ -56,6 +68,231 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
       throw new Error(`Did not reach the ${key} block`);
     }
 
+    async function focusIs(id) {
+      await page.waitForFunction(expected => document.activeElement?.id === expected, id);
+    }
+    async function setDisclosure(id, open) {
+      const details = page.locator(`#${id}`);
+      if (await details.evaluate(element => element.open) !== open) await details.locator(":scope > summary").click();
+      assert.equal(await details.evaluate(element => element.open), open);
+    }
+    async function inspectWithoutStepping(inspect) {
+      const before = await state();
+      await inspect();
+      const after = await state();
+      assert.equal(after.trace.sequence, before.trace.sequence, "Inspecting information must not execute code");
+      assert.equal(after.trace.transition, before.trace.transition);
+      assert.deepEqual(after.env, before.env);
+      assert.deepEqual(after.training, before.training);
+      assert.deepEqual(after.trace, before.trace);
+      assert.deepEqual(after.action, before.action);
+      assert.deepEqual(after.history, before.history);
+    }
+    async function dashboardVisible(expected) {
+      for (const selector of [".learning-panel", ".diagnostics-grid", ".control-column"]) {
+        assert.equal(await page.locator(selector).isVisible(), expected, `${selector} visibility`);
+      }
+    }
+    async function verifySourceProvenance() {
+      const view = await page.locator("#trace-source-view").inputValue();
+      assert.equal(await page.locator("#trace-panel").getAttribute("data-source-view"), view);
+      assert.equal(await page.locator("#trace-code").getAttribute("data-language"), view);
+      const file = await page.locator("#trace-source-file").innerText();
+      const origin = await page.locator("#trace-source-origin").innerText();
+      const note = await page.locator("#trace-source-note").innerText();
+      assert.equal(await page.locator("#trace-source-note").isVisible(), true);
+      const link = await page.locator("#trace-source-link").getAttribute("href");
+      const range = (await page.locator("#trace-source-range").innerText()).match(/^L(\d+)–(\d+)$/);
+      assert.ok(range, "A displayed excerpt needs source line numbers");
+      const first = Number(range[1]), last = Number(range[2]);
+      const actual = await page.locator("#trace-code > .trace-code-line > .trace-line-text").allTextContents();
+      const normalized = lines => lines.map(line => line.trim().replace(/\t/g, "    "));
+      if (view === "python") {
+        assert.match(file, /^(?:(?:TD3|main|utils)\.py|auv_sim\/[a-z_]+\.py)$/);
+        assert.match(note, /live values.*JavaScript/i);
+        const stage = await page.locator("#trace-panel").getAttribute("data-stage");
+        if (stage === "transition_end") {
+          assert.match(note, /browser pause boundary.*Python.*loop context/i);
+          assert.match(await page.locator("#trace-execution-note").innerText(), /Python loop context.*browser transition complete/i);
+        } else {
+          assert.match(note, /Python is not executing/i);
+          assert.match(await page.locator("#trace-execution-note").innerText(), /Python reference.*browser stage completed/i);
+        }
+        assert.equal(await page.locator("#trace-values-title").innerText(), "Live browser values");
+        if (/^(TD3|main|utils)\.py$/.test(file)) {
+          assert.equal(origin, "sfujim/TD3 · Python reference");
+          assert.equal(link, `https://github.com/sfujim/TD3/blob/${referenceRevision}/${file}#L${first}-L${last}`);
+        } else {
+          assert.equal(origin, "AUV-practice · Python reference");
+          assert.match(link, new RegExp(`^https://github\\.com/AWDaley/AUV-practice/blob/[0-9a-f]{40}/${file.replaceAll(".", "\\.")}#L${first}-L${last}$`));
+        }
+        assert.deepEqual(normalized(actual), normalized(fileLines(file).slice(first - 1, last)),
+          "Python display must quote the identified source lines, not a translated or invented substitute");
+      } else {
+        assert.equal(view, "javascript");
+        assert.match(file, /^web_src\/(worker|td3|environment)\.js$/);
+        assert.equal(origin, "Browser engine · JavaScript");
+        assert.match(note, /JavaScript block has executed/i);
+        assert.equal(await page.locator("#trace-values-title").innerText(), "Key values");
+        assert.match(await page.locator("#trace-execution-note").innerText(), /JavaScript has just executed/i);
+        assert.deepEqual(normalized(actual), normalized(fileLines(file).slice(first - 1, last)));
+      }
+      return view;
+    }
+    async function switchSource(view) {
+      await inspectWithoutStepping(async () => {
+        await page.locator("#trace-source-view").selectOption(view);
+        await page.waitForFunction(language => document.getElementById("trace-code").dataset.language === language, view);
+        assert.equal(await page.locator("#trace-play").getAttribute("aria-pressed"), "false");
+        await rendered();
+      });
+    }
+    async function sourceReadable(minimumFont) {
+      const metrics = await page.locator("#trace-code-scroll").evaluate(element => {
+        const text = element.querySelector(".trace-line-text"), style = getComputedStyle(text);
+        return { font_size: parseFloat(style.fontSize), white_space: style.whiteSpace,
+          width: element.clientWidth, scroll_width: element.scrollWidth };
+      });
+      assert.ok(metrics.font_size >= minimumFont - 0.1, `Code is too small: ${metrics.font_size}px`);
+      assert.ok(["pre-wrap", "break-spaces", "normal"].includes(metrics.white_space), `Code does not wrap: ${metrics.white_space}`);
+      assert.ok(metrics.scroll_width <= metrics.width + 2, "Wrapped source still needs horizontal scrolling");
+      return metrics;
+    }
+    async function wholeSourceContained() {
+      const metrics = await page.locator("#trace-code-scroll").evaluate(pane => {
+        const bounds = pane.getBoundingClientRect();
+        const lines = Array.from(document.querySelectorAll("#trace-code > .trace-code-line"));
+        const contained = lines.filter(line => {
+          const rect = line.getBoundingClientRect();
+          return rect.top >= bounds.top - 1 && rect.bottom <= bounds.bottom + 1;
+        });
+        return { logical_lines: lines.length, fully_contained_lines: contained.length,
+          pane_height: pane.clientHeight, scroll_height: pane.scrollHeight, scroll_top: pane.scrollTop,
+          overflow_y: getComputedStyle(pane).overflowY };
+      });
+      assert.ok(metrics.logical_lines > 0, "Executed source block is empty");
+      assert.equal(metrics.fully_contained_lines, metrics.logical_lines, "Some active source lines are clipped by the code pane");
+      assert.ok(metrics.scroll_height <= metrics.pane_height + 2, "The active source still needs internal vertical scrolling");
+      assert.ok(!["auto", "scroll", "hidden", "clip"].includes(metrics.overflow_y),
+        `Code pane must expand with its source instead of trapping or clipping it: ${metrics.overflow_y}`);
+      assert.equal(metrics.scroll_top, 0, "The source pane should no longer jump to a statement inside a truncated block");
+      return metrics;
+    }
+    async function focusedStatementVisible(expectedText) {
+      // The statement remains emphasized, but the whole block now expands.
+      // Poll after paint to verify its containment without scrolling the pane.
+      await page.waitForFunction(expected => {
+        const pane = document.getElementById("trace-code-scroll");
+        const statement = Array.from(document.querySelectorAll("#trace-code .trace-code-line.is-focus"))
+          .find(line => line.textContent.includes(expected));
+        if (!statement) return false;
+        const bounds = pane.getBoundingClientRect(), line = statement.getBoundingClientRect();
+        return line.top >= bounds.top - 1 && line.bottom <= bounds.bottom + 1
+          && line.left >= bounds.left - 1 && line.right <= bounds.right + 1;
+      }, expectedText, { polling: "raf" });
+      return page.evaluate(expected => {
+        const pane = document.getElementById("trace-code-scroll");
+        const statement = Array.from(document.querySelectorAll("#trace-code .trace-code-line.is-focus"))
+          .find(line => line.textContent.includes(expected));
+        const bounds = pane.getBoundingClientRect(), line = statement.getBoundingClientRect();
+        return { text: statement.querySelector(".trace-line-text").textContent,
+          pane_top: bounds.top, pane_bottom: bounds.bottom, line_top: line.top,
+          line_bottom: line.bottom, scroll_top: pane.scrollTop };
+      }, expectedText);
+    }
+    async function desktopLayout() {
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+      const boxes = await page.evaluate(() => {
+        const bounds = selector => {
+          const rect = document.querySelector(selector).getBoundingClientRect();
+          return { x: rect.x, y: rect.y, right: rect.right, bottom: rect.bottom, width: rect.width, height: rect.height };
+        };
+        return { viewport: { width: innerWidth, height: innerHeight }, document_height: document.documentElement.scrollHeight,
+          toolbar: bounds("#trace-toolbar"), tank: bounds("#simulation"), panel: bounds("#trace-panel"),
+          source: bounds("#trace-code-scroll"), values: bounds("#trace-values") };
+      });
+      assert.ok(boxes.tank.right <= boxes.panel.x + 1, "Desktop tank and code must sit beside each other without overlap");
+      assert.ok(boxes.source.y >= boxes.toolbar.bottom - 1, "Toolbar covers the source");
+      assert.ok(boxes.source.y < boxes.viewport.height && boxes.source.bottom > boxes.source.y,
+        "Source is not visible in the desktop workspace");
+      assert.ok(boxes.values.y >= boxes.source.bottom - 1, "Source overlaps the key values");
+      const watches = await page.locator("#trace-values > div").count();
+      assert.ok(watches > 0 && watches <= 4, `Expected up to four key values, received ${watches}`);
+      return { ...boxes, key_values: watches, code: await sourceReadable(14) };
+    }
+    async function wholeBlockInViewport(expectedLines) {
+      await page.locator("#trace-code-scroll").evaluate(element => element.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" }));
+      const metrics = await page.evaluate(() => {
+        const pane = document.getElementById("trace-code-scroll"), bounds = pane.getBoundingClientRect();
+        const toolbar = document.getElementById("trace-toolbar").getBoundingClientRect();
+        const lines = Array.from(document.querySelectorAll("#trace-code > .trace-code-line"));
+        const visible = lines.filter(line => {
+          const rect = line.getBoundingClientRect();
+          return rect.top >= toolbar.bottom - 1 && rect.bottom <= innerHeight + 1;
+        });
+        return { logical_lines: lines.length, fully_visible_lines: visible.length,
+          pane_top: bounds.top, pane_bottom: bounds.bottom, pane_height: bounds.height,
+          toolbar_top: toolbar.top, toolbar_bottom: toolbar.bottom, viewport_height: innerHeight,
+          page_scroll: scrollY, pane_scroll: pane.scrollTop };
+      });
+      assert.equal(metrics.logical_lines, expectedLines);
+      assert.equal(metrics.fully_visible_lines, expectedLines,
+        `The complete ${expectedLines}-line active block should be readable at once: ${JSON.stringify(metrics)}`);
+      assert.ok(metrics.toolbar_top >= -1 && metrics.toolbar_bottom < metrics.viewport_height);
+      assert.ok(metrics.pane_top >= metrics.toolbar_bottom - 1, "Sticky toolbar covers the start of the block");
+      assert.ok(metrics.pane_bottom <= metrics.viewport_height + 2, "The active block extends below the viewport");
+      assert.equal(metrics.pane_scroll, 0);
+      return metrics;
+    }
+    async function expandedImplementationFits(expectedMinimumLines) {
+      await setDisclosure("trace-source-detail", true);
+      const metrics = await page.locator(".trace-detail-scroll").evaluate(region => {
+        const pane = document.getElementById("trace-code-scroll"), bounds = pane.getBoundingClientRect();
+        const regionBounds = region.getBoundingClientRect();
+        const lines = Array.from(region.querySelectorAll(".trace-code-line"));
+        const contained = lines.filter(line => {
+          const rect = line.getBoundingClientRect();
+          return rect.top >= bounds.top - 1 && rect.bottom <= bounds.bottom + 1
+            && rect.top >= regionBounds.top - 1 && rect.bottom <= regionBounds.bottom + 1;
+        });
+        return { logical_lines: lines.length, fully_contained_lines: contained.length,
+          height: region.clientHeight, scroll_height: region.scrollHeight,
+          pane_height: pane.clientHeight, pane_scroll_height: pane.scrollHeight,
+          document_height: document.documentElement.scrollHeight };
+      });
+      assert.ok(metrics.logical_lines >= expectedMinimumLines, "Called implementation is unexpectedly incomplete");
+      assert.equal(metrics.fully_contained_lines, metrics.logical_lines);
+      assert.ok(metrics.scroll_height <= metrics.height + 2, "Called implementation has an internal vertical scroll cap");
+      assert.ok(metrics.pane_scroll_height <= metrics.pane_height + 2, "Expanded implementation is clipped by the outer source pane");
+      // Reach the end using document scrolling; neither source container may scroll.
+      await page.locator("#trace-detail-code > .trace-code-line:last-child").evaluate(element => element.scrollIntoView({ block: "center", behavior: "instant" }));
+      assert.equal(await page.locator("#trace-code-scroll").evaluate(element => element.scrollTop), 0);
+      assert.equal(await page.locator(".trace-detail-scroll").evaluate(element => element.scrollTop), 0);
+      return metrics;
+    }
+    async function mobileContentReachable(selector) {
+      await page.locator(selector).evaluate(element => element.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" }));
+      const boxes = await page.evaluate(selector => {
+        const rect = element => {
+          const bounds = element.getBoundingClientRect();
+          return { top: bounds.top, bottom: bounds.bottom, left: bounds.left, right: bounds.right,
+            height: bounds.height, width: bounds.width };
+        };
+        return { height: innerHeight, toolbar: rect(document.getElementById("trace-toolbar")),
+          content: rect(document.querySelector(selector)),
+          buttons: ["trace-play", "trace-next", "trace-tick"].map(id => ({ id, ...rect(document.getElementById(id)) })) };
+      }, selector);
+      assert.ok(boxes.toolbar.top >= -1 && boxes.toolbar.bottom < boxes.height,
+        "The mobile stepping toolbar must remain on screen while inspecting code");
+      assert.ok(boxes.content.top >= boxes.toolbar.bottom - 1, `Sticky controls cover ${selector}`);
+      assert.ok(boxes.content.bottom <= boxes.height + 2, `${selector} cannot be read in the remaining mobile viewport: ${JSON.stringify(boxes)}`);
+      for (const button of boxes.buttons) {
+        assert.ok(button.top >= boxes.toolbar.top - 1 && button.bottom <= boxes.toolbar.bottom + 1);
+        assert.ok(button.width >= 40 && button.height >= 40, `${button.id} needs a usable touch target`);
+      }
+      return boxes;
+    }
+
     await page.goto(pathToFileURL(path.join(root, "auv-practice.html")).href);
     await page.waitForFunction(() => document.getElementById("connection-text").textContent === "Browser engine ready");
     const initial = await state();
@@ -64,13 +301,61 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     let value = await rendered();
     assert.equal(value.trace.role, "preview");
     assert.equal(value.trace.stage.key, "observation");
+    assert.equal(await page.locator("#trace-source-view").inputValue(), "python", "Python reference must be the default source view");
+    await focusIs("trace-next");
+    await dashboardVisible(false);
     assert.equal(await page.locator("#train-button").isEnabled(), false);
+    assert.equal(await page.getByRole("button", { name: "Next block", exact: true }).isVisible(), true);
+    assert.equal(await page.locator("#code-view").getAttribute("aria-pressed"), "true");
+    assert.equal(await page.locator("#code-view").evaluate(element => getComputedStyle(element).opacity), "1");
+    await inspectWithoutStepping(async () => {
+      await setDisclosure("trace-source-context", true);
+      assert.match(await page.locator("#trace-source-precision").innerText(), /not Python local variables/i);
+      assert.ok((await page.locator("#trace-source-mapping").innerText()).length > 30);
+      await setDisclosure("trace-license", true);
+      assert.match(await page.locator("#trace-source-license").innerText(), /MIT License/);
+      assert.match(await page.locator("#trace-source-license").innerText(), /Scott Fujimoto/);
+      await setDisclosure("trace-license", false);
+      await setDisclosure("trace-source-context", false);
+      await setDisclosure("trace-source-detail", true);
+      assert.equal(await page.locator("#trace-detail-code").isVisible(), true);
+      assert.ok((await page.locator("#trace-detail-code").innerText()).includes("observation"));
+      await setDisclosure("trace-source-detail", false);
+      await setDisclosure("trace-observation-detail", true);
+      assert.equal(await page.locator("#trace-observation-grid > div").count(), 21);
+      assert.equal(await page.locator("#trace-observation-grid").isVisible(), true);
+      await setDisclosure("trace-observation-detail", false);
+    });
     const stationary = value.env.vehicle;
     await stepTo("actor");
+    assert.equal(await page.locator("#trace-source-file").innerText(), "TD3.py");
+    const actorPython = await page.locator("#trace-code").innerText();
+    assert.match(actorPython, /def select_action/);
+    assert.match(actorPython, /torch\.FloatTensor/);
+    assert.match(actorPython, /self\.actor\(state\)\.cpu\(\)\.data\.numpy\(\)\.flatten\(\)/);
+    assert.ok((await page.locator("#trace-code .trace-token-keyword").allTextContents()).includes("def"), "Python keywords should be highlighted");
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+    await page.screenshot({ path: path.join(artifacts, "desktop-python-actor.png"), fullPage: true });
     assert.deepEqual((await state()).env.vehicle, stationary);
     value = await stepTo("environment");
     assert.notDeepEqual(value.env.vehicle, stationary);
     assert.equal(value.env.episode_step, initial.env.episode_step + 1);
+    await switchSource("javascript");
+    await inspectWithoutStepping(async () => {
+      layout.expanded_physics = await expandedImplementationFits(51);
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+      await page.screenshot({ path: path.join(artifacts, "desktop-expanded-physics.png"), fullPage: true });
+      await page.setViewportSize({ width: 390, height: 844 });
+      layout.mobile_expanded_physics = await expandedImplementationFits(51);
+      layout.mobile_expanded_physics.code = await sourceReadable(13);
+      await wholeSourceContained();
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390);
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+      await page.screenshot({ path: path.join(artifacts, "mobile-expanded-physics.png"), fullPage: true });
+      await page.setViewportSize({ width: 1366, height: 768 });
+      await setDisclosure("trace-source-detail", false);
+    });
+    await switchSource("python");
     const movementStep = value.env.episode_step;
     value = await advance("#trace-tick");
     assert.equal(value.trace.at_boundary, true);
@@ -80,7 +365,11 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.equal(value.training.updates, initial.training.updates);
     assert.equal(value.training.buffer_size, 0);
 
-    await page.locator("#trace-pace").selectOption("300");
+    await inspectWithoutStepping(async () => {
+      await setDisclosure("trace-options", true);
+      await page.locator("#trace-pace").selectOption("300");
+      await setDisclosure("trace-options", false);
+    });
     const sequence = value.trace.sequence;
     await page.locator("#trace-play").click();
     await until(current => current.trace.sequence >= sequence + 3);
@@ -92,9 +381,25 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.equal((await state()).trace.sequence, held.trace.sequence);
     assert.deepEqual((await state()).env.vehicle, held.env.vehicle);
 
+    await inspectWithoutStepping(async () => {
+      await setDisclosure("trace-options", true);
+      await page.locator("#trace-pace").selectOption("1600");
+      await setDisclosure("trace-options", false);
+    });
+    await page.locator("#trace-play").click();
+    assert.equal(await page.locator("#trace-play").getAttribute("aria-pressed"), "true");
+    await switchSource("javascript");
+    const sourceSwitched = await state();
+    await pause(1700);
+    assert.deepEqual((await state()).trace, sourceSwitched.trace, "Switching source must cancel scheduled autoplay");
+    assert.deepEqual((await state()).env, sourceSwitched.env);
+    await switchSource("python");
+
     await page.locator("#simulation-view").click();
     await until(current => !current.trace.enabled && current.mode === "paused");
     assert.equal(await page.locator("#trace-panel").isVisible(), false);
+    await focusIs("code-view");
+    await dashboardVisible(true);
     await page.locator("#training-steps").fill("34");
     await page.locator("#train-button").click();
     await until(current => current.mode === "paused" && current.training.steps === 50034);
@@ -104,15 +409,57 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     value = await stepTo("replay_sample");
     const learningVehicle = value.env.vehicle;
     const sampledIndex = value.trace.stage.values.sample_index;
+    await inspectWithoutStepping(async () => {
+      await setDisclosure("trace-observation-detail", true);
+      assert.equal(await page.locator("#trace-observation-grid > div").count(), 21);
+      assert.match(await page.locator("#trace-observation-grid").innerText(), /→/);
+      await setDisclosure("trace-observation-detail", false);
+    });
     await stepTo("target_actions");
     value = await stepTo("bellman_target");
     assert.equal(value.trace.stage.values.sample_index, sampledIndex);
     assert.deepEqual(value.env.vehicle, learningVehicle);
     assert.equal(await page.locator("#trace-equation").isVisible(), true);
     assert.match(await page.locator("#trace-values-context").innerText(), /replay|sample|minibatch/i);
+    layout.desktop = await desktopLayout();
+    await inspectWithoutStepping(async () => {
+      layout.desktop.focused_statement = await focusedStatementVisible("target_Q = reward");
+    });
     await page.screenshot({ path: path.join(artifacts, "desktop-target.png"), fullPage: true });
+    await inspectWithoutStepping(async () => {
+      await setDisclosure("trace-all-values", true);
+      assert.equal(await page.locator("#trace-raw-values").isVisible(), true);
+      const rawLabels = await page.locator("#trace-raw-values dt").allTextContents();
+      for (const key of Object.keys(value.trace.stage.values)) assert.ok(rawLabels.includes(key), `Missing raw value: ${key}`);
+      await setDisclosure("trace-all-values", false);
+    });
     value = await stepTo("critic");
+    assert.equal(await page.locator("#trace-values-context").innerText(), "Replay minibatch",
+      "Critic losses and means describe the full minibatch, not only the illustrated replay row");
     assert.deepEqual(value.env.vehicle, learningVehicle);
+    assert.equal(await page.locator("#trace-source-view").inputValue(), "python");
+    assert.equal(await page.locator("#trace-source-file").innerText(), "TD3.py");
+    const criticPython = await page.locator("#trace-code").innerText();
+    assert.match(criticPython, /F\.mse_loss\(current_Q1, target_Q\)/);
+    assert.match(criticPython, /critic_loss\.backward\(\)/);
+    assert.match(criticPython, /self\.critic_optimizer\.step\(\)/);
+    await inspectWithoutStepping(async () => {
+      const lines = await page.locator("#trace-code > .trace-code-line").count();
+      assert.ok(lines >= 5 && lines < 22, "The original Python critic excerpt should keep its own line count");
+      layout.python_critic = await wholeBlockInViewport(lines);
+      await page.screenshot({ path: path.join(artifacts, "desktop-python-critic.png") });
+    });
+    await switchSource("javascript");
+    assert.match(await page.locator("#trace-code").innerText(), /this\.q1\.backward/);
+    assert.ok(!(await page.locator("#trace-code").innerText()).includes("critic_loss.backward()"));
+    await inspectWithoutStepping(async () => {
+      layout.javascript_critic = await wholeBlockInViewport(22);
+      await page.screenshot({ path: path.join(artifacts, "desktop-javascript-critic.png") });
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+      await page.screenshot({ path: path.join(artifacts, "desktop-javascript-critic-full.png"), fullPage: true });
+    });
+    await switchSource("python");
+    assert.equal(await page.locator("#trace-code").innerText(), criticPython);
     value = await stepTo("actor_skip");
     assert.equal(value.training.updates, 48877);
     value = await advance("#trace-tick");
@@ -126,8 +473,25 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
     await page.setViewportSize({ width: 390, height: 844 });
     await pause(100);
-    const mobile = await page.evaluate(() => ({ width: innerWidth, document: document.documentElement.scrollWidth }));
+    const mobile = await page.evaluate(() => ({ width: innerWidth, document: document.documentElement.scrollWidth,
+      height: document.documentElement.scrollHeight }));
     assert.ok(mobile.document <= mobile.width, `Mobile document overflows ${mobile.document} > ${mobile.width}`);
+    await dashboardVisible(false);
+    layout.mobile = { ...mobile, code: await sourceReadable(13), active_source: await wholeSourceContained() };
+    await inspectWithoutStepping(async () => {
+      layout.mobile.source = await mobileContentReachable("#trace-code .trace-code-line:first-child");
+      await page.screenshot({ path: path.join(artifacts, "mobile-python-source-viewport.png") });
+      layout.mobile.values = await mobileContentReachable("#trace-values");
+      await page.screenshot({ path: path.join(artifacts, "mobile-values-viewport.png") });
+      await setDisclosure("trace-source-detail", true);
+      assert.equal(await page.locator("#trace-detail-code").isVisible(), true);
+      await page.screenshot({ path: path.join(artifacts, "mobile-expanded-source.png"), fullPage: true });
+      await setDisclosure("trace-source-detail", false);
+      await setDisclosure("trace-all-values", true);
+      assert.equal(await page.locator("#trace-raw-values").isVisible(), true);
+      await setDisclosure("trace-all-values", false);
+    });
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
     await page.screenshot({ path: path.join(artifacts, "mobile-target.png"), fullPage: true });
     await page.locator("#trace-next").click();
     await until(current => current.trace.at_boundary);
@@ -135,6 +499,8 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     const final = await until(current => !current.trace.enabled && current.mode === "paused");
     assert.equal(final.training.steps, 50036);
     assert.equal(await page.locator("#train-button").isEnabled(), true);
+    await focusIs("code-view");
+    await dashboardVisible(true);
     assert.deepEqual(errors, []);
     assert.deepEqual(requests, []);
     const report = {
@@ -145,6 +511,16 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
       real_replay_target_visible: true, delayed_actor_and_soft_targets_visible: true,
       training_steps: final.training.steps, critic_updates: final.training.updates,
       actor_updates: final.training.actor_updates, observed_stages: [...stages], mobile,
+      disclosures_preserve_execution: true, focus_restored_on_mode_change: true,
+      dashboard_hidden_only_during_walkthrough: true, source_wraps_without_horizontal_scroll: true,
+      raw_variables_accessible: true, bellman_assignment_visible_without_manual_scroll: true,
+      complete_active_blocks_without_internal_scrolling: true, expanded_implementation_uses_page_scrolling: true,
+      default_source_view: "python", python_reference_revision: referenceRevision,
+      original_python_excerpts_match_vendored_source: true, upstream_source_links_are_pinned: true,
+      python_reference_and_javascript_execution_clearly_distinguished: true,
+      switching_source_view_preserves_live_state: true, source_switch_pauses_autoplay: true,
+      actual_javascript_source_remains_available: true,
+      source_blocks: sourceBlocks, layout,
     };
     fs.writeFileSync(path.join(artifacts, "validation.json"), JSON.stringify(report, null, 2) + "\n");
     console.log(JSON.stringify(report, null, 2));

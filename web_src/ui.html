@@ -35,18 +35,24 @@
 
     <section id="trace-toolbar" class="trace-toolbar" aria-label="Code walkthrough controls" hidden>
       <div class="trace-setup">
-        <div class="field"><label for="trace-role">Trace loop</label><select id="trace-role"><option value="preview">Preview · no learning</option><option value="training">Training · updates weights</option></select></div>
-        <div class="field trace-noise-field" id="trace-noise-field" hidden><label for="trace-noise">Exploration noise</label><input id="trace-noise" type="number" min="0" max="0.5" step="0.01" value="0.15"></div>
-        <p id="trace-role-note">The actor controls the sub. Weights and replay stay unchanged.</p>
+        <div class="field"><label for="trace-role">Run mode</label><select id="trace-role"><option value="preview">Preview · no learning</option><option value="training">Training · updates weights</option></select></div>
       </div>
       <div class="trace-transport">
         <button id="trace-play" class="button button-primary" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 3 11 7-11 7z"/></svg><span id="trace-play-label">Play blocks</span></button>
         <button id="trace-next" class="button button-secondary" type="button">Next block <span aria-hidden="true">→</span></button>
         <button id="trace-tick" class="button button-outline" type="button" title="Finish this control step, or execute one new step if this one is complete">Next AUV step</button>
-        <div class="field trace-pace-field"><label for="trace-pace">Block pace</label><select id="trace-pace"><option value="1600">Slow</option><option value="800" selected>Steady</option><option value="300">Quick</option></select></div>
       </div>
-      <p class="trace-transport-note" id="trace-exit-note">The highlighted block has just executed. Switching back finishes the current control step and pauses.</p>
+      <details id="trace-options" class="trace-options">
+        <summary>Options</summary>
+        <div class="trace-options-menu">
+          <div class="field trace-pace-field"><label for="trace-pace">Block pace</label><select id="trace-pace"><option value="1600">Slow</option><option value="800" selected>Steady</option><option value="300">Quick</option></select></div>
+          <div class="field trace-noise-field" id="trace-noise-field" hidden><label for="trace-noise">Exploration noise</label><input id="trace-noise" type="number" min="0" max="0.5" step="0.01" value="0.15"></div>
+          <p id="trace-role-note">The actor controls the sub. Weights and replay stay unchanged.</p>
+          <p class="trace-transport-note" id="trace-exit-note">Opening details pauses playback. Returning to Simulation finishes the current control step and pauses.</p>
+        </div>
+      </details>
     </section>
+    <p id="trace-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
 
     <main>
       <div class="workspace" id="workspace">
@@ -76,19 +82,39 @@
           </section>
 
           <section id="trace-panel" class="panel trace-panel" aria-labelledby="trace-title" hidden>
-            <div class="panel-heading trace-heading"><div><p class="section-kicker">LIVE EXECUTION · JAVASCRIPT</p><h2 id="trace-title">Inside this control step</h2></div><span id="trace-boundary" class="subtle-badge">Paused at a block</span></div>
-            <ol class="trace-flow" id="trace-flow" aria-label="Control step stages">
-              <li data-group="observe"><span>1</span>Observe</li><li data-group="act"><span>2</span>Act</li><li data-group="move"><span>3</span>Move</li><li data-group="store"><span>4</span>Store</li><li data-group="learn"><span>5</span>Learn</li><li data-group="finish"><span>6</span>Finish</li>
-            </ol>
-            <div class="trace-stage-intro"><div class="trace-stage-heading"><span id="trace-stage-kind" class="trace-stage-kind">OBSERVATION</span><span id="trace-sequence" class="trace-sequence">Block 1</span></div><h3 id="trace-stage-title">Read the observation</h3><p id="trace-explanation">Follow the real values used by the simulation.</p></div>
-            <div class="trace-source-bar"><span id="trace-source-file">web_src/worker.js</span><span id="trace-source-range"></span></div>
-            <div class="trace-code-scroll" id="trace-code-scroll" tabindex="0" aria-label="Executed source code"><pre class="trace-code" id="trace-code"></pre></div>
-            <details class="trace-source-detail" id="trace-source-detail" hidden><summary id="trace-source-detail-label">Open the called implementation</summary><div class="trace-detail-location" id="trace-detail-location"></div><div class="trace-code-scroll trace-detail-scroll" tabindex="0" aria-label="Called implementation source"><pre class="trace-code trace-detail-code" id="trace-detail-code"></pre></div></details>
-            <div class="trace-values-heading"><h3>Values from this block</h3><span id="trace-values-context">Live AUV</span></div>
-            <dl id="trace-values" class="trace-values"></dl>
-            <div id="trace-equation" class="trace-equation" hidden></div>
-            <details id="trace-observation-detail" class="trace-observation-detail" hidden><summary>Inspect the 21 observation features</summary><p>16 sonar ranges, 2 goal offsets, speed, and 2 current components. All values are normalized.</p><div id="trace-observation-grid" class="trace-observation-grid"></div></details>
-            <div class="trace-footer"><span id="trace-clock">Environment step 0 · Critic update 0</span><span>Actual source · no network required</span></div>
+            <h2 id="trace-title" class="sr-only">Code walkthrough</h2>
+            <div class="trace-panel-top">
+              <ol class="trace-flow" id="trace-flow" aria-label="Control step stages">
+                <li data-group="observe"><span>1</span>Observe</li><li data-group="act"><span>2</span>Act</li><li data-group="move"><span>3</span>Move</li><li data-group="store"><span>4</span>Store</li><li data-group="learn"><span>5</span>Learn</li><li data-group="finish"><span>6</span>Finish</li>
+              </ol>
+              <span id="trace-boundary" class="sr-only">Paused at a block</span>
+            </div>
+            <div class="trace-stage-intro">
+              <div class="trace-stage-heading"><h3 id="trace-stage-title">Read the observation</h3><span id="trace-sequence" class="trace-sequence">Step 1</span></div>
+              <span id="trace-stage-kind" hidden>OBSERVATION</span>
+              <p id="trace-explanation">Follow the real values used by the simulation.</p>
+            </div>
+            <div class="trace-code-region">
+              <div class="trace-source-tools">
+                <div class="field"><label for="trace-source-view">Code</label><select id="trace-source-view"><option value="python" selected>Python · TD3 reference</option><option value="javascript">JavaScript · browser engine</option></select></div>
+                <a id="trace-source-link" target="_blank" rel="noopener noreferrer">View on GitHub ↗</a>
+              </div>
+              <div class="trace-source-caption"><span id="trace-source-origin">Python reference</span><p id="trace-source-note">Read the Python reference alongside live values from the JavaScript browser simulation.</p></div>
+              <div class="trace-source-bar"><span id="trace-source-file">web_src/worker.js</span><span id="trace-source-range"></span></div>
+              <div class="trace-code-scroll" id="trace-code-scroll" tabindex="0" aria-label="Python reference code for this stage">
+                <pre class="trace-code" id="trace-code"></pre>
+                <details class="trace-source-detail" id="trace-source-detail" hidden><summary id="trace-source-detail-label">Open the called implementation</summary><div class="trace-detail-location" id="trace-detail-location"></div><p id="trace-detail-note" class="trace-detail-note" hidden></p><div class="trace-detail-scroll" aria-label="Called implementation source"><pre class="trace-code trace-detail-code" id="trace-detail-code"></pre></div></details>
+              </div>
+              <details id="trace-source-context" class="trace-source-context"><summary id="trace-context-title">How this maps to the simulation</summary><p id="trace-source-mapping"></p><p id="trace-source-precision"></p><details id="trace-license"><summary>TD3 reference license</summary><pre id="trace-source-license"></pre></details></details>
+            </div>
+            <div id="trace-inspector" class="trace-inspector" tabindex="0" aria-label="Values from the executed block">
+              <div class="trace-values-heading"><h3 id="trace-values-title">Live browser values</h3><span id="trace-values-context">Live AUV</span></div>
+              <dl id="trace-values" class="trace-values"></dl>
+              <div id="trace-equation" class="trace-equation" hidden></div>
+              <details id="trace-all-values" class="trace-all-values"><summary>All variables</summary><p id="trace-full-explanation"></p><dl id="trace-raw-values" class="trace-values trace-raw-values"></dl></details>
+              <details id="trace-observation-detail" class="trace-observation-detail" hidden><summary>Inspect the 21 observation features</summary><p>16 sonar ranges, 2 goal offsets, speed, and 2 current components. All values are normalized.</p><div id="trace-observation-grid" class="trace-observation-grid"></div></details>
+            </div>
+            <div class="trace-footer"><span id="trace-execution-note">Python reference · corresponding browser stage completed.</span><span id="trace-clock">Environment step 0 · Critic update 0</span></div>
           </section>
 
           <section class="panel learning-panel" aria-labelledby="learning-title">

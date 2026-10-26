@@ -10,7 +10,9 @@ On GitHub, open the file and use **Download raw file**. Open the saved `.html` i
 
 The included reef policy is loaded and paused at startup. Wait for **Browser engine ready**, then press **Play**. Use **Pause** or single-step to inspect the vehicle, sonar rays, obstacles, current, goal, trajectory, and actual reward terms. The inspector shows replay size, update counts, losses, and episode returns.
 
-Use **Code walkthrough** to place the tank beside the source and advance through real execution stages. Follow observations into the actor, see the action move the AUV, and inspect replay, TD targets, and delayed updates during training. See [the walkthrough guide](docs/BROWSER.md#code-walkthrough) for how live motion and learning stages fit together.
+**Code walkthrough** defaults to **Python · TD3 reference**: original code from [Scott Fujimoto's TD3 repository](https://github.com/sfujim/TD3/tree/34770ccdcb51df6f6c7d85c1ba7e40d71b940d16), mapped to the corresponding live simulation stage. The values come from the JavaScript browser engine; the HTML is not executing PyTorch or running a Python debugger. Choose **JavaScript · browser engine** to see the source actually executing. AUV-specific physics and observations are shown from this project's separately labeled Python implementation.
+
+The wide source panel shows complete blocks, with key values below them. Scroll the page for longer code or opened implementation details; controls remain available, and the tank stays alongside on desktop. **How this maps to the simulation** explains the source and implementation differences. **All variables** shows the full live browser record, and **Options** contains pace and exploration settings. All reference excerpts and their license are included in the offline file. See [the walkthrough guide](docs/BROWSER.md#code-walkthrough) for source provenance and how motion and learning stages fit together.
 
 The example was trained with real TD3 updates for 50,000 cumulative interactions in the Python implementation. Its weights and recorded history are embedded in the HTML; those initial charts describe prior training. **Reset experiment** starts a fresh, untrained JavaScript learner. All simulation and browser training run on your device, and speed depends on its hardware.
 
@@ -44,7 +46,7 @@ The **Map-aware baseline** is a separate, hand-written A* route planner with ste
 
 The learner performs forward passes, backpropagation, Adam updates, replay sampling, and the TD3 update in JavaScript inside an embedded **Blob Web Worker**. Training is real; the page is not a pre-recorded animation or a remote inference client.
 
-| Setting | Fresh browser model | Included model in browser | Python default |
+| Setting | Fresh browser model | Included model in browser | AUV Python default |
 | --- | --- | --- | --- |
 | Hidden layers in actor and each critic | 64 → 64 | 128 → 128 | 128 → 128 |
 | Training batch size | 32 | 32 for continued learning | 128 |
@@ -60,7 +62,7 @@ The recorded offline browser check opened the file with networking disabled, obs
 
 ## Python implementation (optional)
 
-This path retains the original Python/PyTorch simulator, headless commands, and local server. It is separate from opening the standalone HTML.
+This path runs this repository's AUV Python/PyTorch simulator, headless commands, and local server. It is separate from opening the standalone HTML and from the bundled `sfujim/TD3` reference excerpts.
 
 ### Start on Windows
 
@@ -150,6 +152,8 @@ The CLI saves `runs/latest-results.json` with configuration, measured metrics, r
 | `web_src/bridge.js` | Embedded Blob Worker, message handling, and JSON downloads |
 | `web_src/ui.html`, `web_src/ui.js` | Offline template, controls, canvas, charts, and telemetry |
 | `web_src/trace_ui.js`, `web_src/trace.css` | Walkthrough controls, live values, numbered source, and responsive layout |
+| `third_party/sfujim_td3/` | Unmodified pinned TD3 Python reference files, provenance, and MIT license |
+| `scripts/python_trace_sources.py` | Verified Python excerpts and mappings to browser stages |
 | `scripts/build_html.py` | Model export, walkthrough source extraction, and assembly of the single HTML file |
 | `auv_sim/environment.py` | Motion, seeded courses, ray observations, swept collision tests, rewards, baseline |
 | `auv_sim/td3.py` | Neural networks, replay, TD3 update, learner checkpoint state |

@@ -48,26 +48,60 @@ A short run is not expected to reproduce the included model's history. Speed dep
 
 ## Code walkthrough
 
-**Code walkthrough** places the live tank beside the JavaScript that controls it. Each stage executes a real block of the simulator or learner, then displays that block's values. The AUV moves when the environment step runs; sampling replay and updating neural networks do not move it again.
+**Code walkthrough** defaults to **Python · TD3 reference**, displaying original source from Scott Fujimoto's TD3 repository beside the live AUV. Each stage runs in the JavaScript browser engine, then highlights the corresponding Python reference block and shows the captured browser values. Choose **JavaScript · browser engine** to inspect the source actually executing. The AUV moves when the environment step runs; sampling replay and updating neural networks do not move it again.
 
-The source excerpts come from the executable files when the HTML is built. They are bundled in the same offline file, with their source filenames and line numbers. This is a walkthrough of meaningful blocks, such as a forward pass or an optimizer update. It does not stop at every multiplication inside a neural network. The highlighted block has **already executed**, so the displayed values are its results.
+The source receives roughly two-thirds of the desktop workspace. Each block expands to its full content height, with wrapping lines and key values below the code. Scroll the page to read longer blocks or expanded implementation details; the code and values do not have separate vertical scroll boxes. The toolbar stays available while you scroll, and the desktop tank stays alongside the source.
+
+The compact value summary uses four columns on desktop and two on mobile. Ordinary dashboard panels and experiment controls are hidden until you return to Simulation. On smaller screens, the tank and code stack vertically and the toolbar stays at the top while you read. The workspace can extend beyond the screen so complete source blocks have room to display.
+
+Both source views are bundled in the offline HTML with filenames and line numbers. The JavaScript highlight identifies a block that has **already executed**. The Python highlight identifies the corresponding reference code; its displayed values remain **live JavaScript browser values**, not Python variables from a running interpreter. The HTML does not execute PyTorch or contain a Python debugger. Stages group operations such as a forward pass or an optimizer update.
+
+### Where the Python comes from
+
+The original TD3 excerpts are copied from [`sfujim/TD3` at revision `34770ccdcb51df6f6c7d85c1ba7e40d71b940d16`](https://github.com/sfujim/TD3/tree/34770ccdcb51df6f6c7d85c1ba7e40d71b940d16). The unmodified files and their checksums are retained in [`third_party/sfujim_td3/`](../third_party/sfujim_td3/). Their MIT license credits **Copyright (c) 2020 Scott Fujimoto** and is included with the offline excerpts.
+
+| Python source | What it shows |
+| --- | --- |
+| [`TD3.py`](https://github.com/sfujim/TD3/blob/34770ccdcb51df6f6c7d85c1ba7e40d71b940d16/TD3.py) | Original actor, twin critics, action selection, TD targets, optimizer steps, delayed policy updates, and target interpolation |
+| [`main.py`](https://github.com/sfujim/TD3/blob/34770ccdcb51df6f6c7d85c1ba7e40d71b940d16/main.py) | Original actor-plus-exploration expression and random-training warm-up branch |
+| [`utils.py`](https://github.com/sfujim/TD3/blob/34770ccdcb51df6f6c7d85c1ba7e40d71b940d16/utils.py) | Original replay storage and sampling |
+| [AUV Practice Python at `75b7b262641b097c8056b2005235910ffafa4af4`](https://github.com/AWDaley/AUV-practice/tree/75b7b262641b097c8056b2005235910ffafa4af4/auv_sim) | This project's AUV observations, motion, reward, and episode/controller behavior, labeled separately from the original TD3 source |
+
+The original repository supplies a general TD3 learner and training loop. AUV sensors, physics, and the map-aware baseline belong to this project's environment. Each excerpt identifies its origin and links to the pinned source lines; opening those external links requires a connection, but reading the bundled code does not.
+
+The mapping follows the TD3 calculations without claiming identical experiments. For example, the source's `torch.min(target_Q1, target_Q2)` corresponds to the browser's smaller target-critic estimate, and its delayed update condition corresponds to the browser's actor-update gate. Browser pause boundaries can show surrounding Python context when no single upstream statement matches that boundary. **How this maps to the simulation** explains the current excerpt and relevant differences. **All variables** preserves the captured browser field names.
+
+| Setting | Original `sfujim/TD3` defaults | Fresh browser learner | Included policy in browser |
+| --- | --- | --- | --- |
+| Hidden layers | 256 → 256 | 64 → 64 | 128 → 128 |
+| Batch size | 256 | 32 | 32 |
+| Initial random collection | 25,000 steps | 1,000 steps | Already completed in its training history |
+| Replay capacity | 1,000,000 | 50,000 | 50,000, initially empty after loading |
+
+The original code uses PyTorch, NumPy, environment-dependent action bounds, and the older Gym `done` API. The browser uses its own numeric operations and random streams, normalized actions in `[-1, 1]`, and separate termination and time-limit handling. The pinned Python remains as published; its settings and API are not silently rewritten to match the AUV demonstration.
 
 ### Use the walkthrough
 
-Select **TD3 policy** as the preview controller, then switch from **Simulation** to **Code walkthrough**. The walkthrough starts with **Preview · no learning**, using the current model. Read the explanation and live values beside the highlighted source, then press **Next block** to continue. Preview also supports the baseline and random controllers if you select one before entering. The displayed source is the JavaScript executed by the browser; the repository's Python/PyTorch implementation is a separate program.
+Select **TD3 policy** as the preview controller, then switch from **Simulation** to **Code walkthrough**. The walkthrough starts with **Preview · no learning**, using the current model, and initially selects the Python reference view. Read the explanation and live browser values beside the highlighted source, then press **Next block** to continue. Preview also supports the baseline and random controllers if you select one before entering.
 
 | Control | Behavior |
 | --- | --- |
-| **Trace loop: Preview · no learning** | Runs the selected preview controller. TD3 uses its actor without exploration; no preview controller writes replay or updates weights. |
-| **Trace loop: Training · updates weights** | Collects TD3 training experience and performs eligible replay updates on the active learner. |
+| **Code: Python · TD3 reference** | Shows original TD3 Python mapped to the current stage, with separately labeled AUV Python where the environment is specific to this project. |
+| **Code: JavaScript · browser engine** | Shows the executing browser source for the same stage and values. Changing Code pauses playback without advancing the simulation; the choice is kept for the current tab. |
+| **Run mode: Preview · no learning** | Runs the selected preview controller. TD3 uses its actor without exploration; no preview controller writes replay or updates weights. |
+| **Run mode: Training · updates weights** | Collects TD3 training experience and performs eligible replay updates on the active learner. |
 | **Next block** | Executes the next stage and displays its actual values. |
 | **Finish this step / Next AUV step** | The label reflects the current stage. Finish this step completes the current transition and its eligible learning work. At a completed transition, Next AUV step runs one new complete transition. |
 | **Play blocks / Pause blocks** | Advances through blocks automatically, or holds the current stage for inspection. Automatic playback pauses when the tab becomes hidden. |
-| **Block pace** | Changes the reading time between blocks, without changing the physics integration interval or learning settings. |
-| **Exploration noise** | The training-only field sets collection noise from `0` to `0.5` and stays synchronized with the ordinary training slider. |
+| **Options → Block pace** | Changes the reading time between blocks, without changing the physics integration interval or learning settings. |
+| **Options → Exploration noise** | The training-only field sets collection noise from `0` to `0.5` and stays synchronized with the ordinary training slider. |
+| **All variables** | Expands the full values recorded for the current block, using captured JavaScript field names in either source view. The key-value summary remains available above it. |
+| **How this maps to the simulation** | Explains the source origin, mapping differences, and reference license. |
 | **Simulation** | Completes only any in-flight transition/update, then returns to ordinary controls with the run paused. |
 
-Pause blocks when you want to examine a stage without advancing it. Returning to Simulation is different: it completes the remaining work for that transition so that replay entries, counters, and optimizer state stay consistent. Changing the trace loop or exploration-noise setting also finishes an in-flight transition before starting the next one with the new settings. Ordinary playback, reset, training, evaluation, and checkpoint controls are disabled while the walkthrough is active; return to Simulation to use them.
+Pause blocks when you want to examine a stage without advancing it. Opening Options, All variables, source/mapping/license details, or the observation details also pauses automatic playback, giving you time to read. You can still advance manually with Next block. Keyboard focus moves to Next block when you enter the walkthrough and returns to Code walkthrough when you leave.
+
+Returning to Simulation completes the remaining work for the current transition so that replay entries, counters, and optimizer state stay consistent. Changing the run mode or exploration-noise setting also finishes an in-flight transition before starting the next one with the new settings. Return to Simulation for ordinary playback, reset, training budgets, evaluation, and checkpoints.
 
 To inspect learning, select **Training · updates weights**. The existing exploration-noise setting applies until you change it. This loop continues as you advance blocks; it does not use the ordinary training-budget field. For a shorter first learning walkthrough, keep the included trained policy: its initial warm-up is already complete, although loading it starts with empty replay, so it must collect 32 transitions before the first new update. A fresh model still performs the usual 1,000 random warm-up transitions. The walkthrough shows when learning is skipped and why; it does not silently bypass those rules.
 
@@ -75,7 +109,7 @@ To reach the learning stages quickly, stay in **Simulation** with the included p
 
 The goal/collision result remains visible while you inspect the remaining stages of a terminal transition. The episode reset is a later stage, so arrival is not immediately hidden by a new starting position.
 
-Expand the called implementation to inspect how observation features are calculated, the actor's matrix operations and activations, the environment's motion/collision/reward calculation, or the target-weight interpolation. The observation expander lists all 21 normalized features. At replay sampling, it instead shows the first sampled row's stored state and successor side by side.
+Expand the called implementation to inspect how observation features are calculated, the actor's matrix operations and activations, the environment's motion/collision/reward calculation, or the target-weight interpolation. The expanded source uses its full height; continue down the page to read it. The observation expander lists all 21 normalized features. At replay sampling, it instead shows the first sampled row's stored state and successor side by side. All variables retains every recorded value for the stage, including values omitted from the compact summary.
 
 ### Follow a control step
 
@@ -178,9 +212,13 @@ The JavaScript verification suite passed **77 tests**: 32 environment, 12 TD3, 2
 
 ### Walkthrough validation
 
-The [walkthrough validation report](walkthrough-validation.json) records **14 focused trace integration tests** and an offline check of the generated HTML in Chromium `134.0.6998.35`. The browser check observed **zero network requests and zero page errors**. At a 390-pixel viewport, the document width was also 390 pixels.
+The [walkthrough validation report](walkthrough-validation.json) records **14 passing trace integration tests**, **7 passing Python-source provenance tests**, and an offline check of the generated HTML in Chromium `134.0.6998.35`. The browser check observed **zero network requests and zero page errors**. The report identifies the tested HTML by size and SHA-256 checksum.
 
-The checks covered staged execution against ordinary execution, numerical Bellman-target values from actual replay samples, delayed actor and target updates, preview isolation from learning, and pausing at a stage. The walkthrough layout was also inspected visually. These checks support the connection between the displayed code, its live values, and the simulation state; they do not establish broader navigation performance.
+The checks verified the Python default, exact original excerpts, pinned file/line links, and the visible distinction between Python references and live JavaScript values. Provenance tests check the upstream Git blob IDs and SHA-256 hashes, exact excerpt slices, and separate source origins at the pinned `34770ccd…` TD3 and `75b7b262…` AUV revisions. Changing source views preserved the trace, action, environment, history, and training state while pausing automatic playback.
+
+Both the **10-line original Python critic block** and the **22-line JavaScript critic block** were fully visible in the **1366 × 768** desktop check after positioning the page, without internal source scrolling. Source text remained **14 px on desktop and 13 px on mobile**; the 390-pixel mobile viewport had a 390-pixel document width. Long implementation details use normal page scrolling. The browser checks also covered actual replay targets, delayed updates, preview isolation, pausing, disclosures, access to recorded values, minibatch labels, focus, and source wrapping. Screenshots were inspected visually.
+
+The report retains the ordinary-browser regression for the older HTML artifact whose SHA-256 begins `bb85afec`: 1,200 training steps with 200 critic and 100 actor updates, and 10/10 goals on the fixed reef suite. That regression was not rerun for this Python-reference interface revision. The current checks concern source authenticity, mapping, live execution, and layout.
 
 ## Source and rebuilding
 
@@ -192,6 +230,8 @@ Opening the distributed HTML needs no development tools. Edit the source and reb
 | [web_src/ui.js](../web_src/ui.js) | Controls, charts, canvas, and command dispatch |
 | [web_src/trace_ui.js](../web_src/trace_ui.js) | Walkthrough playback, source highlighting, explanations, and live values |
 | [web_src/trace.css](../web_src/trace.css) | Responsive walkthrough layout and code styling |
+| [third_party/sfujim_td3/](../third_party/sfujim_td3/) | Unmodified pinned Python reference, checksums, and MIT license |
+| [scripts/python_trace_sources.py](../scripts/python_trace_sources.py) | Hash-verified Python excerpts and mappings to browser stages |
 | [auv_sim/static/styles.css](../auv_sim/static/styles.css) | Shared responsive styling embedded by the builder |
 | [web_src/environment.js](../web_src/environment.js) | Seeded environment, observations, geometry, and baseline |
 | [web_src/td3.js](../web_src/td3.js) | Networks, gradients, Adam, replay, TD3, and checkpoint encoding |
@@ -205,7 +245,9 @@ From the repository root, using the project's Python/PyTorch environment:
 python scripts/build_html.py
 ```
 
-The normal builder imports **NumPy and PyTorch**, reads `auv_sim/assets/td3-demo-reef-50000.pt`, exports numerical tensors and optimizer state, and inlines everything into `auv-practice.html`. It also extracts the walkthrough's marked executable blocks and their source line numbers. It needs no Node/npm build chain or CDN dependency. These build dependencies are not needed to open the result. Editing source alone does not update an existing HTML; rebuild and reopen it.
+The normal builder imports **NumPy and PyTorch**, reads `auv_sim/assets/td3-demo-reef-50000.pt`, exports numerical tensors and optimizer state, and inlines everything into `auv-practice.html`. It extracts the marked executable JavaScript blocks and bundles the pinned Python excerpts, their source mappings, line numbers, and license. Python is used during this development build; the completed HTML runs its JavaScript engine. It needs no Node/npm build chain or CDN dependency. These build dependencies are not needed to open the result. Editing source alone does not update an existing HTML; rebuild and reopen it.
+
+The Python-source helper verifies the pinned file hashes and excerpt boundaries before bundling them. Updating a reference file requires updating its provenance and mapping deliberately. The vendored reference files support reading in the walkthrough; they are not a complete runnable checkout of the original TD3 repository.
 
 To regenerate the Python/JavaScript comparison fixtures as well:
 
@@ -241,7 +283,8 @@ The additional [scripts/check_trace_browser.cjs](../scripts/check_trace_browser.
 | Engine cannot start | Read the visible error and check whether the browser/viewer permits Blob Web Workers. Use a normal browser tab for the saved file. |
 | Training is slow | Use a smaller budget, keep the tab active, or reset for the fresh 64-unit model. Save the active learned model first if needed. |
 | AUV holds still while code advances | The current block may be reading observations, choosing an action, or updating networks. Only the environment step moves the vehicle. |
-| Walkthrough does not update weights yet | Select the Training trace loop and inspect the warm-up/replay explanation. Preview does not train. |
+| Walkthrough does not update weights yet | Choose Training in Run mode and inspect the warm-up/replay explanation. Preview does not train. |
+| Python names/settings differ from the live values | The default view shows original reference Python. The values come from the browser engine; open How this maps to the simulation or choose JavaScript to inspect the executing implementation. |
 | Replay values differ from the current tank | The displayed training row is sampled from stored experience and can come from an earlier position or episode. |
 | Edited scene/seed/current has no effect | Click Reset experiment to apply staged settings; this also replaces the learner. |
 | Reload shows the original example | Reopening restores the embedded model. Import your downloaded checkpoint to restore a separately saved policy. |
