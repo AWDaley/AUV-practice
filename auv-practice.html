@@ -37,7 +37,7 @@
 .walkthrough-on .view-button{min-height:36px;padding:7px 14px;line-height:18px}
 
 /* Playback stays in one row on desktop; advanced settings use a disclosure. */
-.trace-toolbar{display:flex;align-items:center;gap:12px;position:relative;z-index:10;margin-bottom:12px;padding:10px 12px;border:1px solid #2b4652;border-radius:10px;background:#10232e}
+.trace-toolbar{display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10;margin-bottom:12px;padding:10px 12px;border:1px solid #2b4652;border-radius:10px;background:#10232e;box-shadow:0 5px 14px #0003}
 .trace-setup{min-width:0;margin-right:auto}
 .trace-setup>.field{display:flex;flex-direction:row;align-items:center;gap:10px}
 .trace-setup label{font-size:11px;color:#a9c1cd;white-space:nowrap}
@@ -58,11 +58,11 @@
 .trace-options>summary:focus-visible{outline:2px solid var(--teal);outline-offset:3px}
 .trace-panel summary:focus-visible{outline:2px solid var(--teal);outline-offset:-3px}
 
-/* Both panels share a stable height, so changing execution stages cannot jump the page. */
+/* The code grows to show the whole block; the tank stays beside it while reading. */
 .code-mode.workspace{display:block}
-.code-mode>.main-column{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:14px;align-items:stretch;height:max(510px,calc(100dvh - 214px))}
+.code-mode>.main-column{display:grid;grid-template-columns:minmax(300px,.65fr) minmax(0,1.35fr);gap:14px;align-items:start}
 .code-mode .panel{border-radius:12px;box-shadow:none}
-.code-mode .tank-panel{display:flex;flex-direction:column;min-height:0;position:static}
+.code-mode .tank-panel{display:flex;flex-direction:column;min-height:0;position:sticky;top:78px;height:max(510px,calc(100dvh - 214px));max-height:720px}
 .code-mode .tank-heading{padding:12px 16px;min-height:50px;flex:none}
 .code-mode .tank-heading .section-kicker{display:none}
 .code-mode .tank-heading h2{font-size:17px;gap:8px}
@@ -87,7 +87,7 @@
 .tank-panel[data-trace-stage=environment] .tank-wrap{box-shadow:inset 0 0 0 2px #61dfc435}
 
 /* Current block, its source, and a short set of useful values form the inspector. */
-.trace-panel{display:flex;flex-direction:column;min-width:0;min-height:0;background:#0e202b;border-color:#304c58}
+.trace-panel{display:flex;flex-direction:column;min-width:0;min-height:max(510px,calc(100dvh - 214px));background:#0e202b;border-color:#304c58}
 .trace-panel-top{flex:none;border-bottom:1px solid var(--border-soft)}
 .trace-panel-top #trace-boundary{display:none}
 .trace-flow{display:flex;align-items:center;gap:5px;margin:0;padding:7px 12px;list-style:none;min-height:38px}
@@ -101,15 +101,15 @@
 .trace-stage-intro h3{font-size:19px;font-weight:600;line-height:1.35;letter-spacing:-.3px;color:#eef7f8}
 .trace-sequence{flex:none;font-size:10px;color:#86a4b2;font-variant-numeric:tabular-nums;white-space:nowrap}
 .trace-stage-intro p{margin-top:6px;font-size:12px;line-height:1.55;color:#a9c1cc}
-.trace-code-region{display:flex;flex-direction:column;min-height:140px;flex:1;overflow:hidden;background:#091923;border-top:1px solid #27414e;border-bottom:1px solid #27414e}
+.trace-code-region{display:flex;flex-direction:column;min-height:320px;flex:1 0 auto;overflow:visible;background:#091923;border-top:1px solid #27414e;border-bottom:1px solid #27414e}
 .trace-source-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:none;padding:7px 16px;background:#112b36;color:#9ad5c8;font:11px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}
 #trace-source-file{overflow-wrap:anywhere}
 #trace-source-range{color:#89a8b7;white-space:nowrap;flex:none}
-.trace-code-scroll{min-height:0;overflow:auto;flex:1;scrollbar-width:thin;scrollbar-color:#3b5b67 #0b1b26;background:#091923;overscroll-behavior:contain}
-.trace-code{margin:0;padding:10px 0 12px;width:100%;min-width:0;font:13px/1.65 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;tab-size:2;color:#d8e7ed;white-space:normal}
+.trace-code-scroll{min-height:0;overflow:visible;flex:1 0 auto;background:#091923;scroll-margin-top:82px}
+.trace-code{margin:0;padding:12px 0 14px;width:100%;min-width:0;font:14px/1.65 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;tab-size:2;color:#d8e7ed;white-space:normal}
 .trace-code-line{display:flex;align-items:flex-start;width:100%;min-width:0;min-height:21px;border-left:2px solid #58bfaa73;background:#173d3835;padding-right:14px}
 .trace-code-line.is-focus{background:#24534580;border-left-color:#8be6cc}
-.trace-line-number{display:block;width:46px;min-width:46px;flex:none;text-align:right;padding-right:12px;color:#7393a2;user-select:none;font-size:11px;line-height:21.45px}
+.trace-line-number{display:block;width:46px;min-width:46px;flex:none;text-align:right;padding-right:12px;color:#7393a2;user-select:none;font-size:11px;line-height:23.1px}
 .trace-line-text{display:block;flex:1;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal}
 .trace-token-keyword{color:#c6b5ee}.trace-token-string{color:#bfdc9d}.trace-token-number{color:#edbf91}.trace-token-comment{color:#87abae}
 .trace-source-detail{border-top:1px solid #243d49;background:#0d202b}
@@ -118,11 +118,12 @@
 .trace-detail-location{padding:0 16px 8px;color:#8eacb8;font:10px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
 .trace-detail-scroll{display:block;overflow:visible;max-height:none;min-height:0;flex:none;background:transparent}
 .trace-detail-code .trace-code-line{border-color:transparent;background:transparent}
-.trace-inspector{flex:0 1 auto;min-height:132px;max-height:245px;overflow:auto;scrollbar-width:thin;scrollbar-color:#3b5b67 #0e202b;overscroll-behavior:contain;background:#10232e}
+.trace-inspector{flex:none;min-height:0;overflow:visible;background:#10232e;scroll-margin-top:82px}
 .trace-values-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px 3px}
 .trace-values-heading h3{font-size:11px;line-height:1.5;font-weight:550;color:#bed4df}
 .trace-values-heading>span{font-size:10px;line-height:1.5;color:#8cb5bd}
 .trace-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px;margin:0;padding:0 18px 8px}
+#trace-values{grid-template-columns:repeat(4,minmax(0,1fr));gap:0 16px}
 .trace-watch{min-width:0;padding:6px 0;border-bottom:1px solid #28404b}
 .trace-watch.wide{grid-column:1/-1}
 .trace-watch dt{font:11px/1.45 ui-sans-serif,system-ui,sans-serif;color:#91b0be;margin:0 0 2px;overflow-wrap:anywhere}
@@ -148,7 +149,7 @@
  .trace-setup>.field{gap:8px}.trace-setup select{width:196px;font-size:11px}
  .trace-transport{gap:6px}.trace-transport>.button{padding:10px 11px;font-size:11px}
  .trace-options>summary{padding:10px 11px;font-size:11px}
- .code-mode>.main-column{gap:12px;grid-template-columns:minmax(0,.78fr) minmax(0,1.22fr)}
+ .code-mode>.main-column{gap:12px;grid-template-columns:minmax(280px,.62fr) minmax(0,1.38fr)}
  .code-mode .tank-heading{padding:12px}.code-mode .tank-heading h2{font-size:16px}
  .code-mode .tank-heading .episode-counter span{font-size:9px}
  .code-mode .live-metrics>div{padding:0 8px}.code-mode .live-metrics span{font-size:8px}
@@ -175,8 +176,8 @@
  .trace-transport{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
  .trace-transport>.button{padding:9px 8px;font-size:12px;min-width:0;min-height:44px}
  .trace-options-menu{width:min(300px,calc(100vw - 45px));z-index:25}
- .code-mode>.main-column{height:auto;display:flex;flex-direction:column;gap:14px}
- .code-mode .tank-panel{height:398px;flex:none}
+ .code-mode>.main-column{height:auto;display:flex;flex-direction:column;gap:14px;align-items:stretch}
+ .code-mode .tank-panel{height:398px;flex:none;position:static;max-height:none}
  .code-mode .tank-heading{padding:11px 15px;min-height:46px}
  .code-mode .tank-heading h2{font-size:17px}
  .code-mode .tank-heading .episode-counter span{font-size:10px}
@@ -188,13 +189,15 @@
  .code-mode .live-metrics>div{padding:0 12px}
  .code-mode .live-metrics span{font-size:9px}.code-mode .live-metrics strong{font-size:21px}.code-mode .live-metrics small{font-size:8px}
  .trace-tank-status{min-height:36px;padding:7px 15px;font-size:10px}
- .trace-panel{height:calc(100dvh - 148px);min-height:620px;flex:none;scroll-margin-top:132px}
+ .trace-panel{height:auto;min-height:0;flex:none;scroll-margin-top:132px}
  .trace-panel-top{min-height:36px}.trace-flow{padding:6px 12px;gap:4px}.trace-flow li{font-size:11px;padding:4px 6px}
  .trace-stage-intro{padding:12px 16px}.trace-stage-intro h3{font-size:19px}.trace-stage-intro p{font-size:12px}
- .trace-code-region{min-height:160px}.trace-code{font-size:12px;line-height:1.7}.trace-code-line{min-height:20px}
- .trace-line-number{width:42px;min-width:42px;padding-right:10px;font-size:10px;line-height:20.4px}
- .trace-inspector{max-height:260px;scroll-margin-top:132px}
+ .trace-code-region{min-height:260px}.trace-code{font-size:13px;line-height:1.7}.trace-code-line{min-height:22px}
+ .trace-code-scroll{scroll-margin-top:132px}
+ .trace-line-number{width:42px;min-width:42px;padding-right:10px;font-size:10px;line-height:22.1px}
+ .trace-inspector{scroll-margin-top:132px}
  .trace-values-heading{padding:10px 16px 3px}.trace-values{padding:0 16px 8px}
+ #trace-values{grid-template-columns:repeat(2,minmax(0,1fr));gap:0 14px}
  .trace-equation{margin-left:16px;margin-right:16px}.trace-footer{padding:8px 16px;font-size:9px;flex-wrap:wrap;gap:3px 12px}
 }
 
@@ -225,6 +228,7 @@
  .trace-source-detail>summary,.trace-all-values>summary,.trace-observation-detail>summary{padding:9px 13px;font-size:11px}
  .trace-detail-location{padding-left:13px;padding-right:13px;font-size:9px}
  .trace-values-heading{padding:10px 14px 3px}.trace-values-heading h3{font-size:11px}.trace-values-heading>span{font-size:9px}
+ #trace-values{gap:0 13px}
  .trace-values{padding-left:14px;padding-right:14px;gap:0 13px}.trace-watch dt{font-size:10px}.trace-watch dd{font-size:12px}
  .trace-equation{margin-left:14px;margin-right:14px;font-size:10px;line-height:1.7}.trace-equation small{font-size:9px}
  .trace-observation-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding-left:13px;padding-right:13px}
@@ -788,20 +792,6 @@
       if (sourceKey !== stage.source) {
         sourceKey = stage.source;
         showSource(elements["trace-code"], source, focusFor[stage.key]);
-        elements["trace-code-scroll"].scrollTop = 0;
-        elements["trace-code-scroll"].scrollLeft = 0;
-        // Keep the result-producing statement visible when a completed block is
-        // taller than its pane. This only scrolls source; it executes no code.
-        window.requestAnimationFrame(() => {
-          if (sourceKey !== stage.source) return;
-          const pane = elements["trace-code-scroll"];
-          const focus = elements["trace-code"].querySelector(".is-focus");
-          if (!focus) return;
-          const bounds = pane.getBoundingClientRect(), line = focus.getBoundingClientRect();
-          if (line.bottom > bounds.bottom || line.top < bounds.top) {
-            pane.scrollTop += line.top - bounds.top - Math.max(0, (pane.clientHeight - line.height) / 2);
-          }
-        });
       }
       const detailKey = stage.details_source || detailFor[stage.key];
       const detail = sources[detailKey];
@@ -812,7 +802,6 @@
         showSource(elements["trace-detail-code"], detail);
       }
       renderValues(stage);
-      if (!elements["trace-all-values"].open && !elements["trace-observation-detail"].open) elements["trace-inspector"].scrollTop = 0;
     }
 
     elements["code-view"].addEventListener("click", () => {

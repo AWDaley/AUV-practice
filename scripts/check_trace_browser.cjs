@@ -7,7 +7,7 @@ const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 const { chromium } = require(process.env.AUV_PLAYWRIGHT_MODULE || "playwright");
 const root = path.resolve(__dirname, "..");
-const artifacts = path.join(root, "playwright-artifacts", "walkthrough-cleanup");
+const artifacts = path.join(root, "playwright-artifacts", "walkthrough-code-room");
 fs.mkdirSync(artifacts, { recursive: true });
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -18,6 +18,7 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     const page = await context.newPage();
     const errors = [], requests = [], stages = new Set();
     const layout = {};
+    const sourceBlocks = {};
     page.on("pageerror", error => errors.push(error.message));
     context.on("request", request => { if (/^https?:/.test(request.url())) requests.push(request.url()); });
     const state = () => page.evaluate(() => window.auvRequest("/api/state"));
@@ -40,6 +41,7 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
       assert.ok((await page.locator("#trace-code").innerText()).trim().length > 0, "Executed block is empty");
       assert.ok(!(await page.locator("#trace-code").innerText()).includes("Source unavailable"));
       assert.match(await page.locator("#trace-source-file").innerText(), /^web_src\/(worker|td3|environment)\.js/);
+      sourceBlocks[value.trace.stage.key] = await wholeSourceContained();
       return value;
     }
     async function advance(button = "#trace-next") {
@@ -90,9 +92,29 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
       assert.ok(metrics.scroll_width <= metrics.width + 2, "Wrapped source still needs horizontal scrolling");
       return metrics;
     }
+    async function wholeSourceContained() {
+      const metrics = await page.locator("#trace-code-scroll").evaluate(pane => {
+        const bounds = pane.getBoundingClientRect();
+        const lines = Array.from(document.querySelectorAll("#trace-code > .trace-code-line"));
+        const contained = lines.filter(line => {
+          const rect = line.getBoundingClientRect();
+          return rect.top >= bounds.top - 1 && rect.bottom <= bounds.bottom + 1;
+        });
+        return { logical_lines: lines.length, fully_contained_lines: contained.length,
+          pane_height: pane.clientHeight, scroll_height: pane.scrollHeight, scroll_top: pane.scrollTop,
+          overflow_y: getComputedStyle(pane).overflowY };
+      });
+      assert.ok(metrics.logical_lines > 0, "Executed source block is empty");
+      assert.equal(metrics.fully_contained_lines, metrics.logical_lines, "Some active source lines are clipped by the code pane");
+      assert.ok(metrics.scroll_height <= metrics.pane_height + 2, "The active source still needs internal vertical scrolling");
+      assert.ok(!["auto", "scroll", "hidden", "clip"].includes(metrics.overflow_y),
+        `Code pane must expand with its source instead of trapping or clipping it: ${metrics.overflow_y}`);
+      assert.equal(metrics.scroll_top, 0, "The source pane should no longer jump to a statement inside a truncated block");
+      return metrics;
+    }
     async function focusedStatementVisible(expectedText) {
-      // The UI positions the focus line on the next animation frame. Poll with
-      // rAF so this checks the settled source pane, not the preceding paint.
+      // The statement remains emphasized, but the whole block now expands.
+      // Poll after paint to verify its containment without scrolling the pane.
       await page.waitForFunction(expected => {
         const pane = document.getElementById("trace-code-scroll");
         const statement = document.querySelector("#trace-code .trace-code-line.is-focus");
@@ -110,7 +132,7 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
           line_bottom: line.bottom, scroll_top: pane.scrollTop };
       });
     }
-    async function compactDesktopLayout() {
+    async function desktopLayout() {
       await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
       const boxes = await page.evaluate(() => {
         const bounds = selector => {
@@ -126,10 +148,59 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
       assert.ok(boxes.source.y < boxes.viewport.height && boxes.source.bottom > boxes.source.y,
         "Source is not visible in the desktop workspace");
       assert.ok(boxes.values.y >= boxes.source.bottom - 1, "Source overlaps the key values");
-      assert.ok(boxes.values.bottom <= boxes.viewport.height + 2, "Key values are below the desktop viewport");
       const watches = await page.locator("#trace-values > div").count();
       assert.ok(watches > 0 && watches <= 4, `Expected up to four key values, received ${watches}`);
-      return { ...boxes, key_values: watches, code: await sourceReadable(13) };
+      return { ...boxes, key_values: watches, code: await sourceReadable(14) };
+    }
+    async function wholeBlockInViewport(expectedLines) {
+      await page.locator("#trace-code-scroll").evaluate(element => element.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" }));
+      const metrics = await page.evaluate(() => {
+        const pane = document.getElementById("trace-code-scroll"), bounds = pane.getBoundingClientRect();
+        const toolbar = document.getElementById("trace-toolbar").getBoundingClientRect();
+        const lines = Array.from(document.querySelectorAll("#trace-code > .trace-code-line"));
+        const visible = lines.filter(line => {
+          const rect = line.getBoundingClientRect();
+          return rect.top >= toolbar.bottom - 1 && rect.bottom <= innerHeight + 1;
+        });
+        return { logical_lines: lines.length, fully_visible_lines: visible.length,
+          pane_top: bounds.top, pane_bottom: bounds.bottom, pane_height: bounds.height,
+          toolbar_top: toolbar.top, toolbar_bottom: toolbar.bottom, viewport_height: innerHeight,
+          page_scroll: scrollY, pane_scroll: pane.scrollTop };
+      });
+      assert.equal(metrics.logical_lines, expectedLines);
+      assert.equal(metrics.fully_visible_lines, expectedLines,
+        `The complete ${expectedLines}-line active block should be readable at once: ${JSON.stringify(metrics)}`);
+      assert.ok(metrics.toolbar_top >= -1 && metrics.toolbar_bottom < metrics.viewport_height);
+      assert.ok(metrics.pane_top >= metrics.toolbar_bottom - 1, "Sticky toolbar covers the start of the block");
+      assert.ok(metrics.pane_bottom <= metrics.viewport_height + 2, "The active block extends below the viewport");
+      assert.equal(metrics.pane_scroll, 0);
+      return metrics;
+    }
+    async function expandedImplementationFits(expectedMinimumLines) {
+      await setDisclosure("trace-source-detail", true);
+      const metrics = await page.locator(".trace-detail-scroll").evaluate(region => {
+        const pane = document.getElementById("trace-code-scroll"), bounds = pane.getBoundingClientRect();
+        const regionBounds = region.getBoundingClientRect();
+        const lines = Array.from(region.querySelectorAll(".trace-code-line"));
+        const contained = lines.filter(line => {
+          const rect = line.getBoundingClientRect();
+          return rect.top >= bounds.top - 1 && rect.bottom <= bounds.bottom + 1
+            && rect.top >= regionBounds.top - 1 && rect.bottom <= regionBounds.bottom + 1;
+        });
+        return { logical_lines: lines.length, fully_contained_lines: contained.length,
+          height: region.clientHeight, scroll_height: region.scrollHeight,
+          pane_height: pane.clientHeight, pane_scroll_height: pane.scrollHeight,
+          document_height: document.documentElement.scrollHeight };
+      });
+      assert.ok(metrics.logical_lines >= expectedMinimumLines, "Called implementation is unexpectedly incomplete");
+      assert.equal(metrics.fully_contained_lines, metrics.logical_lines);
+      assert.ok(metrics.scroll_height <= metrics.height + 2, "Called implementation has an internal vertical scroll cap");
+      assert.ok(metrics.pane_scroll_height <= metrics.pane_height + 2, "Expanded implementation is clipped by the outer source pane");
+      // Reach the end using document scrolling; neither source container may scroll.
+      await page.locator("#trace-detail-code > .trace-code-line:last-child").evaluate(element => element.scrollIntoView({ block: "center", behavior: "instant" }));
+      assert.equal(await page.locator("#trace-code-scroll").evaluate(element => element.scrollTop), 0);
+      assert.equal(await page.locator(".trace-detail-scroll").evaluate(element => element.scrollTop), 0);
+      return metrics;
     }
     async function mobileContentReachable(selector) {
       await page.locator(selector).evaluate(element => element.scrollIntoView({ block: "center", inline: "nearest", behavior: "instant" }));
@@ -184,6 +255,20 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     value = await stepTo("environment");
     assert.notDeepEqual(value.env.vehicle, stationary);
     assert.equal(value.env.episode_step, initial.env.episode_step + 1);
+    await inspectWithoutStepping(async () => {
+      layout.expanded_physics = await expandedImplementationFits(51);
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+      await page.screenshot({ path: path.join(artifacts, "desktop-expanded-physics.png"), fullPage: true });
+      await page.setViewportSize({ width: 390, height: 844 });
+      layout.mobile_expanded_physics = await expandedImplementationFits(51);
+      layout.mobile_expanded_physics.code = await sourceReadable(13);
+      await wholeSourceContained();
+      assert.equal(await page.evaluate(() => document.documentElement.scrollWidth), 390);
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+      await page.screenshot({ path: path.join(artifacts, "mobile-expanded-physics.png"), fullPage: true });
+      await page.setViewportSize({ width: 1366, height: 768 });
+      await setDisclosure("trace-source-detail", false);
+    });
     const movementStep = value.env.episode_step;
     value = await advance("#trace-tick");
     assert.equal(value.trace.at_boundary, true);
@@ -235,7 +320,7 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.deepEqual(value.env.vehicle, learningVehicle);
     assert.equal(await page.locator("#trace-equation").isVisible(), true);
     assert.match(await page.locator("#trace-values-context").innerText(), /replay|sample|minibatch/i);
-    layout.desktop = await compactDesktopLayout();
+    layout.desktop = await desktopLayout();
     await inspectWithoutStepping(async () => {
       layout.desktop.focused_statement = await focusedStatementVisible("work.target[i] =");
     });
@@ -251,6 +336,12 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.equal(await page.locator("#trace-values-context").innerText(), "Replay minibatch",
       "Critic losses and means describe the full minibatch, not only the illustrated replay row");
     assert.deepEqual(value.env.vehicle, learningVehicle);
+    await inspectWithoutStepping(async () => {
+      layout.desktop_critic = await wholeBlockInViewport(22);
+      await page.screenshot({ path: path.join(artifacts, "desktop-critic-viewport.png") });
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+      await page.screenshot({ path: path.join(artifacts, "desktop-critic-full.png"), fullPage: true });
+    });
     value = await stepTo("actor_skip");
     assert.equal(value.training.updates, 48877);
     value = await advance("#trace-tick");
@@ -268,7 +359,7 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
       height: document.documentElement.scrollHeight }));
     assert.ok(mobile.document <= mobile.width, `Mobile document overflows ${mobile.document} > ${mobile.width}`);
     await dashboardVisible(false);
-    layout.mobile = { ...mobile, code: await sourceReadable(12) };
+    layout.mobile = { ...mobile, code: await sourceReadable(13), active_source: await wholeSourceContained() };
     await inspectWithoutStepping(async () => {
       layout.mobile.source = await mobileContentReachable("#trace-code .trace-code-line:first-child");
       await page.screenshot({ path: path.join(artifacts, "mobile-source-viewport.png") });
@@ -304,7 +395,9 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
       actor_updates: final.training.actor_updates, observed_stages: [...stages], mobile,
       disclosures_preserve_execution: true, focus_restored_on_mode_change: true,
       dashboard_hidden_only_during_walkthrough: true, source_wraps_without_horizontal_scroll: true,
-      raw_variables_accessible: true, bellman_assignment_visible_without_manual_scroll: true, layout,
+      raw_variables_accessible: true, bellman_assignment_visible_without_manual_scroll: true,
+      complete_active_blocks_without_internal_scrolling: true, expanded_implementation_uses_page_scrolling: true,
+      source_blocks: sourceBlocks, layout,
     };
     fs.writeFileSync(path.join(artifacts, "validation.json"), JSON.stringify(report, null, 2) + "\n");
     console.log(JSON.stringify(report, null, 2));

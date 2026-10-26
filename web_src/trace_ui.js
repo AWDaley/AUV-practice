@@ -342,20 +342,6 @@
       if (sourceKey !== stage.source) {
         sourceKey = stage.source;
         showSource(elements["trace-code"], source, focusFor[stage.key]);
-        elements["trace-code-scroll"].scrollTop = 0;
-        elements["trace-code-scroll"].scrollLeft = 0;
-        // Keep the result-producing statement visible when a completed block is
-        // taller than its pane. This only scrolls source; it executes no code.
-        window.requestAnimationFrame(() => {
-          if (sourceKey !== stage.source) return;
-          const pane = elements["trace-code-scroll"];
-          const focus = elements["trace-code"].querySelector(".is-focus");
-          if (!focus) return;
-          const bounds = pane.getBoundingClientRect(), line = focus.getBoundingClientRect();
-          if (line.bottom > bounds.bottom || line.top < bounds.top) {
-            pane.scrollTop += line.top - bounds.top - Math.max(0, (pane.clientHeight - line.height) / 2);
-          }
-        });
       }
       const detailKey = stage.details_source || detailFor[stage.key];
       const detail = sources[detailKey];
@@ -366,7 +352,6 @@
         showSource(elements["trace-detail-code"], detail);
       }
       renderValues(stage);
-      if (!elements["trace-all-values"].open && !elements["trace-observation-detail"].open) elements["trace-inspector"].scrollTop = 0;
     }
 
     elements["code-view"].addEventListener("click", () => {

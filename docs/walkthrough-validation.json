@@ -31,7 +31,7 @@
   "mobile": {
     "width": 390,
     "document": 390,
-    "height": 1348
+    "height": 1302
   },
   "disclosures_preserve_execution": true,
   "focus_restored_on_mode_change": true,
@@ -39,13 +39,145 @@
   "source_wraps_without_horizontal_scroll": true,
   "raw_variables_accessible": true,
   "bellman_assignment_visible_without_manual_scroll": true,
+  "complete_active_blocks_without_internal_scrolling": true,
+  "expanded_implementation_uses_page_scrolling": true,
+  "source_blocks": {
+    "observation": {
+      "logical_lines": 1,
+      "fully_contained_lines": 1,
+      "pane_height": 288,
+      "scroll_height": 288,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "actor": {
+      "logical_lines": 2,
+      "fully_contained_lines": 2,
+      "pane_height": 288,
+      "scroll_height": 288,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "environment": {
+      "logical_lines": 3,
+      "fully_contained_lines": 3,
+      "pane_height": 288,
+      "scroll_height": 288,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "transition_end": {
+      "logical_lines": 3,
+      "fully_contained_lines": 3,
+      "pane_height": 288,
+      "scroll_height": 288,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "exploration": {
+      "logical_lines": 5,
+      "fully_contained_lines": 5,
+      "pane_height": 288,
+      "scroll_height": 288,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "replay_add": {
+      "logical_lines": 3,
+      "fully_contained_lines": 3,
+      "pane_height": 288,
+      "scroll_height": 288,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "replay_sample": {
+      "logical_lines": 3,
+      "fully_contained_lines": 3,
+      "pane_height": 288,
+      "scroll_height": 288,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "target_actions": {
+      "logical_lines": 14,
+      "fully_contained_lines": 14,
+      "pane_height": 349,
+      "scroll_height": 349,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "bellman_target": {
+      "logical_lines": 8,
+      "fully_contained_lines": 8,
+      "pane_height": 288,
+      "scroll_height": 288,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "critic": {
+      "logical_lines": 22,
+      "fully_contained_lines": 22,
+      "pane_height": 534,
+      "scroll_height": 534,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "actor_skip": {
+      "logical_lines": 1,
+      "fully_contained_lines": 1,
+      "pane_height": 288,
+      "scroll_height": 288,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "actor_update": {
+      "logical_lines": 17,
+      "fully_contained_lines": 17,
+      "pane_height": 465,
+      "scroll_height": 465,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "soft_targets": {
+      "logical_lines": 3,
+      "fully_contained_lines": 3,
+      "pane_height": 288,
+      "scroll_height": 288,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    }
+  },
   "layout": {
+    "expanded_physics": {
+      "logical_lines": 51,
+      "fully_contained_lines": 51,
+      "height": 1296,
+      "scroll_height": 1296,
+      "pane_height": 1450,
+      "pane_scroll_height": 1450,
+      "document_height": 1965
+    },
+    "mobile_expanded_physics": {
+      "logical_lines": 51,
+      "fully_contained_lines": 51,
+      "height": 2257,
+      "scroll_height": 2257,
+      "pane_height": 2451,
+      "pane_scroll_height": 2451,
+      "document_height": 3481,
+      "code": {
+        "font_size": 13,
+        "white_space": "pre-wrap",
+        "width": 364,
+        "scroll_width": 364
+      }
+    },
     "desktop": {
       "viewport": {
         "width": 1366,
         "height": 768
       },
-      "document_height": 768,
+      "document_height": 864,
       "toolbar": {
         "x": 40,
         "y": 120,
@@ -57,60 +189,80 @@
       "tank": {
         "x": 40,
         "y": 198,
-        "right": 548.796875,
+        "right": 453.390625,
         "bottom": 752,
-        "width": 508.796875,
+        "width": 413.390625,
         "height": 554
       },
       "panel": {
-        "x": 562.796875,
+        "x": 467.390625,
         "y": 198,
         "right": 1326,
-        "bottom": 752,
-        "width": 763.203125,
-        "height": 554
+        "bottom": 847.90625,
+        "width": 858.609375,
+        "height": 649.90625
       },
       "source": {
-        "x": 563.796875,
+        "x": 468.390625,
         "y": 345.234375,
         "right": 1325,
-        "bottom": 486.390625,
-        "width": 761.203125,
-        "height": 141.15625
+        "bottom": 632.734375,
+        "width": 856.609375,
+        "height": 287.5
       },
       "values": {
-        "x": 563.796875,
-        "y": 516.890625,
+        "x": 468.390625,
+        "y": 663.234375,
         "right": 1325,
-        "bottom": 625.765625,
-        "width": 761.203125,
-        "height": 108.875
+        "bottom": 721.671875,
+        "width": 856.609375,
+        "height": 58.4375
       },
       "key_values": 4,
       "code": {
-        "font_size": 13,
+        "font_size": 14,
         "white_space": "pre-wrap",
-        "width": 761,
-        "scroll_width": 761
+        "width": 857,
+        "scroll_width": 857
       },
       "focused_statement": {
         "text": "  work.target[i] = batch.rewards[i] + this.config.discount * batch.not_done[i] * Math.min(next1[i], next2[i]);",
         "pane_top": 345.234375,
-        "pane_bottom": 486.390625,
-        "line_top": 394.921875,
-        "line_bottom": 437.796875,
-        "scroll_top": 89
+        "pane_bottom": 632.734375,
+        "line_top": 495.796875,
+        "line_bottom": 541.984375,
+        "scroll_top": 0
       }
+    },
+    "desktop_critic": {
+      "logical_lines": 22,
+      "fully_visible_lines": 22,
+      "pane_top": 158.234375,
+      "pane_bottom": 692.296875,
+      "pane_height": 534.0625,
+      "toolbar_top": 0,
+      "toolbar_bottom": 66,
+      "viewport_height": 768,
+      "page_scroll": 187,
+      "pane_scroll": 0
     },
     "mobile": {
       "width": 390,
       "document": 390,
-      "height": 1348,
+      "height": 1302,
       "code": {
-        "font_size": 12,
+        "font_size": 13,
         "white_space": "pre-wrap",
         "width": 364,
         "scroll_width": 364
+      },
+      "active_source": {
+        "logical_lines": 3,
+        "fully_contained_lines": 3,
+        "pane_height": 229,
+        "scroll_height": 229,
+        "scroll_top": 0,
+        "overflow_y": "visible"
       },
       "source": {
         "height": 844,
@@ -123,11 +275,11 @@
           "width": 366
         },
         "content": {
-          "top": 401.78125,
-          "bottom": 442.5625,
+          "top": 400.78125,
+          "bottom": 444.96875,
           "left": 13,
           "right": 377,
-          "height": 40.78125,
+          "height": 44.1875,
           "width": 364
         },
         "buttons": [
@@ -171,8 +323,8 @@
           "width": 366
         },
         "content": {
-          "top": 618.765625,
-          "bottom": 721.765625,
+          "top": 618.28125,
+          "bottom": 721.28125,
           "left": 13,
           "right": 377,
           "height": 103,
@@ -211,9 +363,13 @@
     }
   },
   "artifact": "auv-practice.html",
+  "artifact_sha256": "5b9347e1bef48d200f309e42f8606f831812de9326acc51397a80746992d23db",
+  "artifact_size_bytes": 1507208,
   "trace_integration_tests": {
     "passed": 14,
-    "failed": 0
+    "failed": 0,
+    "duration_ms": 2525,
+    "artifact_sha256": "5b9347e1bef48d200f309e42f8606f831812de9326acc51397a80746992d23db"
   },
   "normal_browser_regression": {
     "passed": true,
@@ -237,48 +393,46 @@
     "mobile": {
       "width": 390,
       "document": 390
-    }
+    },
+    "validation_scope": "Previous ordinary-browser regression, before this presentation-only revision; not rerun for the current artifact.",
+    "artifact_sha256": "bb85afec21c6b9cc010af63a1443d1c905e06b6fc1362154422c1d798fc7869d",
+    "artifact_size_bytes": 1507957
   },
   "source_semantics": "Highlighted snippets are extracted from executable JavaScript at build time. Each stage is shown after execution. Preview and training use the same transition and learner generators as ordinary execution.",
+  "critic_minibatch_label_verified": true,
+  "critic_summary_context": "Replay minibatch",
   "layout_comparison": {
-    "measurement_note": "Captured baseline (previous walkthrough layout) and revised layout. Document height depends on the displayed stage and open disclosures; these measurements describe the captured views.",
+    "measurement_note": "Same 22-line critic block at a 1366 by 768 desktop viewport. Baseline is the preceding compact layout with an internally scrolled source pane. Revised capture positions the page to show the complete block; the source pane itself does not scroll. Longer implementation details extend down the page and are not claimed to fit in one viewport.",
     "baseline": {
-      "desktop_viewport": {
+      "artifact_sha256": "bb85afec21c6b9cc010af63a1443d1c905e06b6fc1362154422c1d798fc7869d",
+      "stage": "critic",
+      "viewport": {
         "width": 1366,
         "height": 768
       },
-      "desktop_document_height": 2619,
-      "desktop_toolbar_height": 120,
-      "desktop_code_font_px": 11.0,
-      "desktop_values_bottom": 1109.578125,
-      "mobile_viewport": {
-        "width": 390,
-        "height": 844
-      },
-      "mobile_document_width": 390,
-      "mobile_document_height": 5272,
-      "mobile_code_font_px": 10.0
+      "logical_lines": 22,
+      "fully_visible_lines": 8,
+      "pane_height": 202.75,
+      "pane_client_height": 203,
+      "pane_scroll_height": 494,
+      "pane_scroll_top": 291,
+      "code_font_px": 13.0
     },
     "revised": {
-      "desktop_viewport": {
+      "artifact_sha256": "5b9347e1bef48d200f309e42f8606f831812de9326acc51397a80746992d23db",
+      "stage": "critic",
+      "viewport": {
         "width": 1366,
         "height": 768
       },
-      "desktop_document_height": 768,
-      "desktop_toolbar_height": 66,
-      "desktop_code_font_px": 13,
-      "desktop_values_bottom": 625.765625,
-      "mobile_viewport": {
-        "width": 390,
-        "height": 844
-      },
-      "mobile_document_width": 390,
-      "mobile_document_height": 1348,
-      "mobile_code_font_px": 12
+      "logical_lines": 22,
+      "fully_visible_lines": 22,
+      "pane_height": 534.0625,
+      "pane_client_height": 534,
+      "pane_scroll_height": 534,
+      "pane_scroll_top": 0,
+      "page_scroll_top": 187,
+      "code_font_px": 14
     }
-  },
-  "artifact_sha256": "bb85afec21c6b9cc010af63a1443d1c905e06b6fc1362154422c1d798fc7869d",
-  "artifact_size_bytes": 1507957,
-  "critic_minibatch_label_verified": true,
-  "critic_summary_context": "Replay minibatch"
+  }
 }

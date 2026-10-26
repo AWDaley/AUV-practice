@@ -50,7 +50,9 @@ A short run is not expected to reproduce the included model's history. Speed dep
 
 **Code walkthrough** places the live tank beside the JavaScript that controls it. Each stage executes a real block of the simulator or learner, then displays that block's values. The AUV moves when the environment step runs; sampling replay and updating neural networks do not move it again.
 
-The walkthrough focuses on the tank, source, and a few key values for the current stage. Ordinary dashboard panels and experiment controls are hidden until you return to Simulation. On smaller screens, the tank and code stack vertically while the walkthrough controls remain within reach. Source lines wrap to fit the code panel.
+The source receives roughly two-thirds of the desktop workspace. Each block expands to its full content height, with wrapping lines and key values below the code. Scroll the page to read longer blocks or expanded implementation details; the code and values do not have separate vertical scroll boxes. The toolbar stays available while you scroll, and the desktop tank stays alongside the source.
+
+The compact value summary uses four columns on desktop and two on mobile. Ordinary dashboard panels and experiment controls are hidden until you return to Simulation. On smaller screens, the tank and code stack vertically and the toolbar stays at the top while you read. The workspace can extend beyond the screen so complete source blocks have room to display.
 
 The source excerpts come from the executable files when the HTML is built. They are bundled in the same offline file, with their source filenames and line numbers. This is a walkthrough of meaningful blocks, such as a forward pass or an optimizer update. It does not stop at every multiplication inside a neural network. The highlighted block has **already executed**, so the displayed values are its results.
 
@@ -80,7 +82,7 @@ To reach the learning stages quickly, stay in **Simulation** with the included p
 
 The goal/collision result remains visible while you inspect the remaining stages of a terminal transition. The episode reset is a later stage, so arrival is not immediately hidden by a new starting position.
 
-Expand the called implementation to inspect how observation features are calculated, the actor's matrix operations and activations, the environment's motion/collision/reward calculation, or the target-weight interpolation. The observation expander lists all 21 normalized features. At replay sampling, it instead shows the first sampled row's stored state and successor side by side. All variables retains every recorded value for the stage, including values omitted from the compact summary.
+Expand the called implementation to inspect how observation features are calculated, the actor's matrix operations and activations, the environment's motion/collision/reward calculation, or the target-weight interpolation. The expanded source uses its full height; continue down the page to read it. The observation expander lists all 21 normalized features. At replay sampling, it instead shows the first sampled row's stored state and successor side by side. All variables retains every recorded value for the stage, including values omitted from the compact summary.
 
 ### Follow a control step
 
@@ -185,9 +187,11 @@ The JavaScript verification suite passed **77 tests**: 32 environment, 12 TD3, 2
 
 The [walkthrough validation report](walkthrough-validation.json) records **14 focused trace integration tests** and an offline check of the generated HTML in Chromium `134.0.6998.35`. The browser check observed **zero network requests and zero page errors**. The report includes the tested HTML's size and SHA-256 checksum.
 
-The revised walkthrough fit the captured **1366 × 768** desktop viewport with the tank, code, and four key values visible. At **390 pixels** wide, the document was also 390 pixels wide; the mobile controls remained visible while inspecting source and values. Source text used **13 px on desktop and 12 px on mobile**, wrapping without horizontal code scrolling. In the captured baseline before the layout cleanup, desktop/mobile code used 11/10 px and document heights were 2,619/5,272 px; the revised captured heights were 768/1,348 px. These are measurements of the captured stages with their disclosure states, not fixed heights for every possible view.
+The wider source layout displayed the complete code for all **13 observed stages** without internal vertical scrolling. In the **1366 × 768** desktop check, the 22-line critic block occupied a **534 px** source area and all 22 lines were visible together after positioning the page. The preceding compact layout showed 8 of those 22 lines fully within its **203 px** scrolling pane. Source text now uses **14 px on desktop and 13 px on mobile**. At a 390-pixel viewport, the document was also 390 pixels wide and the controls remained available while inspecting source and values.
 
-The checks covered staged execution against ordinary execution, numerical Bellman targets from actual replay samples, delayed actor and target updates, preview isolation, and pausing at a stage. They also checked disclosures without unintended execution, access to all recorded variables, correct labeling of critic summaries as minibatch values, focus restoration, source wrapping, the visible Bellman assignment, and hiding the dashboard only during walkthrough mode. Screenshots were inspected visually. The ordinary browser regression again completed 1,200 training steps with 200 critic and 100 actor updates and reached 10/10 goals on the same fixed reef suite. These checks support the displayed execution and layout; they do not establish broader navigation performance.
+The expanded physics implementation contained all **51 lines** on both desktop and mobile, using normal page scrolling. Long blocks and implementation details extend the workspace below the screen. The checks also covered numerical Bellman targets from actual replay samples, delayed actor and target updates, preview isolation, stage pausing, disclosures without unintended execution, access to all recorded variables, correct minibatch labels, focus restoration, wrapping source, and hiding the dashboard only during walkthrough mode. Screenshots were inspected visually.
+
+The report retains the ordinary-browser regression from the preceding HTML artifact, whose SHA-256 begins `bb85afec`: 1,200 training steps with 200 critic and 100 actor updates, and 10/10 goals on the fixed reef suite. That regression was not rerun for this presentation-only revision. The current walkthrough checks concern execution and layout.
 
 ## Source and rebuilding
 
