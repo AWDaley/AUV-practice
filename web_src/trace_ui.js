@@ -17,9 +17,79 @@
     network_forward: "See the actor's matrix operations and activations",
     physics: "See motion, collision checks, and the reward calculation",
     soft_update: "See the target-weight interpolation" };
+  const focusFor = { bellman_target: "work.target[i] =", critic: "this.optimizers.q1.step",
+    actor_update: "this.optimizers.actor.step", target_actions: "output[i] = clamp" };
   const learningSamples = new Set(["replay_sample", "target_actions", "bellman_target", "critic", "actor_update"]);
   const featureNames = Array.from({ length: 21 }, (_, i) => i < 16 ? `sonar ${i}`
     : ["goal forward", "goal left", "speed", "current forward", "current left"][i - 16]);
+  const shortExplanation = {
+    reset: "Start the next episode. The policy and replay stay available.",
+    observation: "Read 21 normalized features describing sonar, the goal, speed, and current.",
+    actor: "One neural-network pass chooses acceleration and turn.",
+    random: "Choose a random acceleration and turn command.",
+    baseline: "The map-aware controller follows its planned route.",
+    exploration: "Add sampled exploration noise, then clip the command to [−1, 1].",
+    environment: "Apply the command, move the sub, and check the reward and outcome.",
+    replay_add: "Save this transition and its real successor before any episode reset.",
+    replay_sample: "Draw a batch of past experience. This row may differ from the live tank.",
+    target_actions: "Smooth the target actor's action for learning with clipped noise.",
+    bellman_target: "Add the reward to the discounted, smaller target-Q estimate.",
+    critic: "Fit both critics to the targets. These batch values were measured before the update.",
+    actor_update: "Improve the actor through Q1's action gradient.",
+    actor_skip: "The delay rule skips actor and target updates on this critic step.",
+    soft_targets: "Move target weights a fraction τ toward the online networks.",
+    learning_wait: "Collect more experience before running an optimizer update.",
+    episode: "Record the outcome. The final position stays visible until the next reset.",
+    transition_end: "This control step and its eligible learning work are complete.",
+  };
+
+  function keyValues(stage) {
+    const v = stage.values || {};
+    const pick = (key, label, unit = "") => ({ key, label, value: v[key], unit });
+    const action = key => [
+      { key: `${key}[0]`, label: "Acceleration", value: v[key]?.[0] },
+      { key: `${key}[1]`, label: "Turn", value: v[key]?.[1] },
+    ];
+    let items;
+    switch (stage.key) {
+      case "observation": items = [pick("goal_body", "Goal offset"), pick("speed_normalized", "Normalized speed"),
+        pick("current_body", "Body-frame current"), { key: "observation.length", label: "Input features", value: v.observation?.length }]; break;
+      case "actor": items = [...action("action"), { key: "actor_shape", label: "Network shape", value: v.actor_shape?.join(" → ") },
+        pick("controller", "Controller")]; break;
+      case "random": case "baseline": items = [...action("action"), pick("controller", "Controller"), pick("random_warmup", "Random warm-up")]; break;
+      case "exploration": items = [pick("actor_action", "Actor command"), pick("noise", "Sampled noise"),
+        pick("executed_action", "Applied command"), pick("exploration_std", "Noise scale")]; break;
+      case "environment": items = [pick("position_after", "Position", "m"), pick("goal_distance", "Goal distance", "m"),
+        pick("reward", "Reward"), pick("outcome", "Outcome")]; break;
+      case "replay_add": items = [pick("reward", "Stored reward"), pick("not_done", "Bootstrap mask"),
+        pick("replay_size", "Stored transitions"), pick("slot", "Replay slot")]; break;
+      case "replay_sample": items = [pick("action", "Stored command"), pick("reward", "Stored reward"),
+        pick("not_done", "Bootstrap mask"), pick("batch_size", "Batch size")]; break;
+      case "target_actions": items = [pick("proposed_action", "Target proposal"), pick("raw_noise", "Sampled noise"),
+        pick("clipped_noise", "Clipped noise"), pick("smoothed_action", "Smoothed action")]; break;
+      case "bellman_target": items = [pick("reward", "Reward"), pick("min_target_q", "Smaller target Q"),
+        pick("not_done", "Bootstrap mask"), pick("target", "TD target")]; break;
+      case "critic": items = [pick("critic_loss", "Critic loss"), pick("mean_absolute_td_error", "Mean |TD error|"),
+        pick("q1_mean", "Batch Q1"), pick("q2_mean", "Batch Q2")]; break;
+      case "actor_update": items = [pick("actor_loss", "Actor loss"), pick("actor_updates", "Actor updates"),
+        pick("critic_updates", "Critic updates"), pick("policy_delay", "Update interval")]; break;
+      case "actor_skip": items = [pick("update_actor", "Update actor"), pick("policy_delay", "Update interval"),
+        pick("critic_updates", "Critic updates"), pick("actor_updates", "Actor updates")]; break;
+      case "soft_targets": items = [pick("tau", "Target mix · τ"), ...["Actor", "Q1", "Q2"].map((name, i) => ({
+        key: `target_weights_before[${i}] → target_weights_after[${i}]`, label: `${name} target · first weight`,
+        value: `${v.target_weights_before[i].toFixed(6)} → ${v.target_weights_after[i].toFixed(6)}`,
+      }))]; break;
+      case "learning_wait": items = [pick("training_steps", "Collected steps"), pick("warmup_steps", "Warm-up requirement"),
+        pick("replay_size", "Stored transitions"), pick("batch_size", "Required batch size")]; break;
+      case "episode": items = [pick("outcome", "Outcome"), pick("episode_return", "Episode return"),
+        pick("episode_steps", "Episode steps"), pick("completed_episodes", "Completed episodes")]; break;
+      case "reset": items = [pick("position", "Start position", "m"), pick("goal", "Goal", "m"), pick("episode_step", "Episode step")]; break;
+      case "transition_end": items = [pick("episode_step", "Episode step"), pick("outcome", "Outcome"),
+        pick("critic_updates", "Critic updates"), pick("actor_updates", "Actor updates")]; break;
+      default: items = Object.keys(v).slice(0, 4).map(key => pick(key, key));
+    }
+    return items.filter(item => item.value !== undefined && item.value !== null);
+  }
 
   function valueText(value) {
     if (value === null || value === undefined) return "—";
@@ -53,7 +123,7 @@
     return fragment;
   }
 
-  function showSource(container, source) {
+  function showSource(container, source, focusText) {
     container.replaceChildren();
     if (!source) {
       container.textContent = "Source excerpt unavailable. Rebuild the HTML from its current sources.";
@@ -65,6 +135,7 @@
     source.lines.forEach((text, index) => {
       const line = document.createElement("span");
       line.className = "trace-code-line";
+      if (focusText && text.includes(focusText)) line.classList.add("is-focus");
       const number = document.createElement("span");
       number.className = "trace-line-number";
       number.setAttribute("aria-hidden", "true");
@@ -118,6 +189,11 @@
       const data = await sendCommand("/api/trace", { command: "start", role,
         controller: elements.controller.value, exploration_noise: Number(noise.value) });
       if (!data) elements["trace-role"].value = lastRole;
+      else {
+        elements["trace-options"].open = false;
+        elements["trace-next"].focus({ preventScroll: true });
+        setText("trace-announcement", `${role === "training" ? "Training" : "Preview"} walkthrough. ${data.trace.stage.title}. Use Next block to continue.`);
+      }
     }
 
     async function autoplay(run) {
@@ -132,20 +208,27 @@
 
     function renderValues(stage) {
       const values = stage.values || {};
-      const fragment = document.createDocumentFragment();
-      for (const [key, value] of Object.entries(values)) {
-        if (["observation", "next_observation", "sonar"].includes(key) || value === null) continue;
-        const row = document.createElement("div");
-        row.className = "trace-watch";
-        if (value && typeof value === "object" && !Array.isArray(value) || Array.isArray(value) && value.length > 4) row.classList.add("wide");
-        const label = document.createElement("dt"), result = document.createElement("dd");
-        label.textContent = key;
-        result.textContent = valueText(value);
-        if (typeof value === "boolean") result.className = value ? "is-true" : "is-false";
-        row.append(label, result);
-        fragment.append(row);
+      function renderList(container, items, raw = false) {
+        const fragment = document.createDocumentFragment();
+        for (const { key, label: name, value, unit = "" } of items) {
+          const row = document.createElement("div");
+          row.className = "trace-watch";
+          row.dataset.key = key;
+          if (raw && (value && typeof value === "object" && !Array.isArray(value) || Array.isArray(value) && value.length > 4)) row.classList.add("wide");
+          const label = document.createElement("dt"), result = document.createElement("dd");
+          label.textContent = name;
+          label.title = key;
+          result.textContent = valueText(value) + (unit ? ` ${unit}` : "");
+          result.title = typeof value === "object" ? JSON.stringify(value) : String(value);
+          if (typeof value === "boolean") result.className = value ? "is-true" : "is-false";
+          row.append(label, result);
+          fragment.append(row);
+        }
+        container.replaceChildren(fragment);
       }
-      elements["trace-values"].replaceChildren(fragment);
+      renderList(elements["trace-values"], keyValues(stage));
+      renderList(elements["trace-raw-values"], Object.entries(values).map(([key, value]) => ({ key, label: key, value })), true);
+      setText("trace-full-explanation", stage.explanation);
       const observation = values.observation;
       const hasObservation = Array.isArray(observation) && observation.length === 21;
       elements["trace-observation-detail"].hidden = !hasObservation;
@@ -175,7 +258,7 @@
         const result = document.createElement("strong"), note = document.createElement("small");
         result.textContent = valueText(values.target);
         equation.append(document.createTextNode(`y = ${valueText(values.reward)} + ${valueText(values.discount)} × ${values.not_done} × min(${valueText(values.target_q1)}, ${valueText(values.target_q2)}) = `), result);
-        note.textContent = `First sampled replay row, index ${values.sample_index}. Values are rounded for display; learning uses their full precision.`;
+        note.textContent = `Replay row ${values.sample_index} · rounded for display`;
         equation.append(note);
       } else if (stage.key === "actor_skip") {
         equation.textContent = `${values.critic_updates} % ${values.policy_delay} ≠ 0 → skip actor and target updates`;
@@ -198,6 +281,7 @@
         elements["simulation-view"].setAttribute("aria-pressed", String(!enabled));
         setText("view-description", enabled ? "One block at a time. The same code that runs the simulation."
           : "Watch the vehicle, then follow the code behind each move.");
+        elements["run-message"].setAttribute("aria-live", enabled ? "off" : "polite");
         redraw();
       }
       if (!enabled) {
@@ -231,33 +315,47 @@
         if (active) item.setAttribute("aria-current", "step"); else item.removeAttribute("aria-current");
       });
       setText("trace-stage-kind", groupNames[group].toUpperCase());
-      setText("trace-sequence", `Step ${trace.transition} · Block ${trace.sequence}`);
+      setText("trace-sequence", `Step ${trace.transition}`);
       setText("trace-stage-title", stage.title);
-      setText("trace-explanation", stage.explanation);
+      setText("trace-explanation", stage.key === "transition_end" && !training
+        ? "This move is complete. Preview leaves weights and replay unchanged."
+        : shortExplanation[stage.key] || stage.explanation);
       setText("trace-boundary", trace.at_boundary ? "Control step complete" : "Block executed");
       setText("trace-tick", trace.at_boundary ? "Next AUV step" : "Finish this step");
-      setText("trace-clock", `Environment step ${data.env?.episode_step ?? 0} · Critic update ${data.training?.updates ?? 0} · Actor update ${data.training?.actor_updates ?? 0}`);
+      setText("trace-clock", training ? `Critic ${data.training?.updates ?? 0} · Actor ${data.training?.actor_updates ?? 0}` : "Preview · weights unchanged");
       setText("trace-values-context", learningSamples.has(stage.key)
-        ? stage.key === "actor_update" ? "Replay minibatch" : "Sampled replay row"
+        ? ["actor_update", "critic"].includes(stage.key) ? "Replay minibatch" : `Replay row ${stage.values.sample_index}`
         : ["soft_targets", "actor_skip", "learning_wait"].includes(stage.key) ? "Learner state" : "Live AUV");
       const outcome = data.env?.outcome;
       const finished = outcome && outcome !== "running";
       setText("trace-motion-note", finished
-        ? `${outcome === "success" ? "Goal reached" : outcome === "collision" ? "Collision" : "Time limit"}. The final position stays visible until the next reset block.`
+        ? `${outcome === "success" ? "Goal reached" : outcome === "collision" ? "Collision" : "Time limit"} · final position held until reset`
         : stage.key === "environment" ? `Moved once: environment step ${data.env.episode_step}, Δt = ${valueText(stage.values.dt)} s.`
-          : stage.key === "reset" ? "New episode. The next movement happens in the environment block."
+          : stage.key === "reset" ? "New episode · waiting for the next move"
             : learningSamples.has(stage.key) || ["soft_targets", "actor_skip", "learning_wait"].includes(stage.key)
-              ? "The sub holds position while the learner processes replay."
-              : "The sub holds position between environment blocks.");
+              ? "Holding position · learning from replay"
+              : "Holding position · waiting for the move block");
       const source = sources[stage.source];
       setText("trace-source-file", source?.file || "Source excerpt unavailable");
       setText("trace-source-range", source ? `L${source.start_line}–${source.end_line}` : "");
       elements["trace-code"].dataset.source = stage.source;
       if (sourceKey !== stage.source) {
         sourceKey = stage.source;
-        showSource(elements["trace-code"], source);
+        showSource(elements["trace-code"], source, focusFor[stage.key]);
         elements["trace-code-scroll"].scrollTop = 0;
         elements["trace-code-scroll"].scrollLeft = 0;
+        // Keep the result-producing statement visible when a completed block is
+        // taller than its pane. This only scrolls source; it executes no code.
+        window.requestAnimationFrame(() => {
+          if (sourceKey !== stage.source) return;
+          const pane = elements["trace-code-scroll"];
+          const focus = elements["trace-code"].querySelector(".is-focus");
+          if (!focus) return;
+          const bounds = pane.getBoundingClientRect(), line = focus.getBoundingClientRect();
+          if (line.bottom > bounds.bottom || line.top < bounds.top) {
+            pane.scrollTop += line.top - bounds.top - Math.max(0, (pane.clientHeight - line.height) / 2);
+          }
+        });
       }
       const detailKey = stage.details_source || detailFor[stage.key];
       const detail = sources[detailKey];
@@ -268,6 +366,7 @@
         showSource(elements["trace-detail-code"], detail);
       }
       renderValues(stage);
+      if (!elements["trace-all-values"].open && !elements["trace-observation-detail"].open) elements["trace-inspector"].scrollTop = 0;
     }
 
     elements["code-view"].addEventListener("click", () => {
@@ -277,7 +376,12 @@
     });
     elements["simulation-view"].addEventListener("click", async () => {
       stopPlaying();
-      await sendCommand("/api/trace", { command: "exit" });
+      elements["trace-options"].open = false;
+      const data = await sendCommand("/api/trace", { command: "exit" });
+      if (data) {
+        elements["code-view"].focus({ preventScroll: true });
+        setText("trace-announcement", "Returned to Simulation. The current control step is complete and the run is paused.");
+      }
     });
     elements["trace-role"].addEventListener("change", startTrace);
     elements["trace-noise"].addEventListener("change", () => {
@@ -294,8 +398,28 @@
       refreshControls();
       timer = window.setTimeout(() => autoplay(run), Number(elements["trace-pace"].value));
     });
-    elements["trace-next"].addEventListener("click", () => sendCommand("/api/trace", { command: "step" }));
-    elements["trace-tick"].addEventListener("click", () => sendCommand("/api/trace", { command: "tick" }));
+    async function manualStep(command, id) {
+      const data = await sendCommand("/api/trace", { command });
+      if (data) {
+        elements[id].focus({ preventScroll: true });
+        setText("trace-announcement", data.trace.stage.title);
+      }
+    }
+    elements["trace-next"].addEventListener("click", () => manualStep("step", "trace-next"));
+    elements["trace-tick"].addEventListener("click", () => manualStep("tick", "trace-tick"));
+    for (const id of ["trace-options", "trace-source-detail", "trace-all-values", "trace-observation-detail"]) {
+      elements[id].addEventListener("toggle", () => { if (elements[id].open) stopPlaying(); });
+    }
+    document.addEventListener("pointerdown", event => {
+      if (!elements["trace-options"].contains(event.target)) elements["trace-options"].open = false;
+    });
+    elements["trace-options"].addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        elements["trace-options"].open = false;
+        elements["trace-options"].querySelector("summary").focus();
+        event.preventDefault();
+      }
+    });
     document.addEventListener("visibilitychange", () => { if (document.hidden) stopPlaying(); });
     window.addEventListener("pagehide", stopPlaying);
 

@@ -30,23 +30,255 @@
   ],
   "mobile": {
     "width": 390,
-    "document": 390
+    "document": 390,
+    "height": 1348
+  },
+  "disclosures_preserve_execution": true,
+  "focus_restored_on_mode_change": true,
+  "dashboard_hidden_only_during_walkthrough": true,
+  "source_wraps_without_horizontal_scroll": true,
+  "raw_variables_accessible": true,
+  "bellman_assignment_visible_without_manual_scroll": true,
+  "layout": {
+    "desktop": {
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "document_height": 768,
+      "toolbar": {
+        "x": 40,
+        "y": 120,
+        "right": 1326,
+        "bottom": 186,
+        "width": 1286,
+        "height": 66
+      },
+      "tank": {
+        "x": 40,
+        "y": 198,
+        "right": 548.796875,
+        "bottom": 752,
+        "width": 508.796875,
+        "height": 554
+      },
+      "panel": {
+        "x": 562.796875,
+        "y": 198,
+        "right": 1326,
+        "bottom": 752,
+        "width": 763.203125,
+        "height": 554
+      },
+      "source": {
+        "x": 563.796875,
+        "y": 345.234375,
+        "right": 1325,
+        "bottom": 486.390625,
+        "width": 761.203125,
+        "height": 141.15625
+      },
+      "values": {
+        "x": 563.796875,
+        "y": 516.890625,
+        "right": 1325,
+        "bottom": 625.765625,
+        "width": 761.203125,
+        "height": 108.875
+      },
+      "key_values": 4,
+      "code": {
+        "font_size": 13,
+        "white_space": "pre-wrap",
+        "width": 761,
+        "scroll_width": 761
+      },
+      "focused_statement": {
+        "text": "  work.target[i] = batch.rewards[i] + this.config.discount * batch.not_done[i] * Math.min(next1[i], next2[i]);",
+        "pane_top": 345.234375,
+        "pane_bottom": 486.390625,
+        "line_top": 394.921875,
+        "line_bottom": 437.796875,
+        "scroll_top": 89
+      }
+    },
+    "mobile": {
+      "width": 390,
+      "document": 390,
+      "height": 1348,
+      "code": {
+        "font_size": 12,
+        "white_space": "pre-wrap",
+        "width": 364,
+        "scroll_width": 364
+      },
+      "source": {
+        "height": 844,
+        "toolbar": {
+          "top": 0,
+          "bottom": 118,
+          "left": 12,
+          "right": 378,
+          "height": 118,
+          "width": 366
+        },
+        "content": {
+          "top": 401.78125,
+          "bottom": 442.5625,
+          "left": 13,
+          "right": 377,
+          "height": 40.78125,
+          "width": 364
+        },
+        "buttons": [
+          {
+            "id": "trace-play",
+            "top": 63,
+            "bottom": 107,
+            "left": 23,
+            "right": 133,
+            "height": 44,
+            "width": 110
+          },
+          {
+            "id": "trace-next",
+            "top": 63,
+            "bottom": 107,
+            "left": 140,
+            "right": 250,
+            "height": 44,
+            "width": 110
+          },
+          {
+            "id": "trace-tick",
+            "top": 63,
+            "bottom": 107,
+            "left": 257,
+            "right": 367,
+            "height": 44,
+            "width": 110
+          }
+        ]
+      },
+      "values": {
+        "height": 844,
+        "toolbar": {
+          "top": 0,
+          "bottom": 118,
+          "left": 12,
+          "right": 378,
+          "height": 118,
+          "width": 366
+        },
+        "content": {
+          "top": 618.765625,
+          "bottom": 721.765625,
+          "left": 13,
+          "right": 377,
+          "height": 103,
+          "width": 364
+        },
+        "buttons": [
+          {
+            "id": "trace-play",
+            "top": 63,
+            "bottom": 107,
+            "left": 23,
+            "right": 133,
+            "height": 44,
+            "width": 110
+          },
+          {
+            "id": "trace-next",
+            "top": 63,
+            "bottom": 107,
+            "left": 140,
+            "right": 250,
+            "height": 44,
+            "width": 110
+          },
+          {
+            "id": "trace-tick",
+            "top": 63,
+            "bottom": 107,
+            "left": 257,
+            "right": 367,
+            "height": 44,
+            "width": 110
+          }
+        ]
+      }
+    }
   },
   "artifact": "auv-practice.html",
-  "artifact_sha256": "5c9d84a477d2a481175c0c6956c3a0252090d214277033e834aaf19c141c0520",
   "trace_integration_tests": {
     "passed": 14,
     "failed": 0
   },
   "normal_browser_regression": {
     "passed": true,
+    "browser": "134.0.6998.35",
+    "protocol": "file://",
+    "offline": true,
     "network_requests": 0,
     "page_errors": 0,
     "training_steps": 1200,
     "critic_updates": 200,
     "actor_updates": 100,
     "fixed_reef_successes": 10,
-    "fixed_reef_episodes": 10
+    "fixed_reef_episodes": 10,
+    "fixed_reef_first_seed": 10007,
+    "fixed_reef_mean_return": 213.57203588012598,
+    "fixed_reef_mean_steps": 144.8,
+    "checkpoint_download_and_import": true,
+    "result_export": true,
+    "invalid_import_preserved_model": true,
+    "pause_response_ms": 412,
+    "mobile": {
+      "width": 390,
+      "document": 390
+    }
   },
-  "source_semantics": "Highlighted snippets are extracted from executable JavaScript at build time. Each stage is shown after execution. Preview and training use the same transition and learner generators as ordinary execution."
+  "source_semantics": "Highlighted snippets are extracted from executable JavaScript at build time. Each stage is shown after execution. Preview and training use the same transition and learner generators as ordinary execution.",
+  "layout_comparison": {
+    "measurement_note": "Captured baseline (previous walkthrough layout) and revised layout. Document height depends on the displayed stage and open disclosures; these measurements describe the captured views.",
+    "baseline": {
+      "desktop_viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "desktop_document_height": 2619,
+      "desktop_toolbar_height": 120,
+      "desktop_code_font_px": 11.0,
+      "desktop_values_bottom": 1109.578125,
+      "mobile_viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "mobile_document_width": 390,
+      "mobile_document_height": 5272,
+      "mobile_code_font_px": 10.0
+    },
+    "revised": {
+      "desktop_viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "desktop_document_height": 768,
+      "desktop_toolbar_height": 66,
+      "desktop_code_font_px": 13,
+      "desktop_values_bottom": 625.765625,
+      "mobile_viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "mobile_document_width": 390,
+      "mobile_document_height": 1348,
+      "mobile_code_font_px": 12
+    }
+  },
+  "artifact_sha256": "bb85afec21c6b9cc010af63a1443d1c905e06b6fc1362154422c1d798fc7869d",
+  "artifact_size_bytes": 1507957,
+  "critic_minibatch_label_verified": true,
+  "critic_summary_context": "Replay minibatch"
 }

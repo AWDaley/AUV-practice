@@ -50,6 +50,8 @@ A short run is not expected to reproduce the included model's history. Speed dep
 
 **Code walkthrough** places the live tank beside the JavaScript that controls it. Each stage executes a real block of the simulator or learner, then displays that block's values. The AUV moves when the environment step runs; sampling replay and updating neural networks do not move it again.
 
+The walkthrough focuses on the tank, source, and a few key values for the current stage. Ordinary dashboard panels and experiment controls are hidden until you return to Simulation. On smaller screens, the tank and code stack vertically while the walkthrough controls remain within reach. Source lines wrap to fit the code panel.
+
 The source excerpts come from the executable files when the HTML is built. They are bundled in the same offline file, with their source filenames and line numbers. This is a walkthrough of meaningful blocks, such as a forward pass or an optimizer update. It does not stop at every multiplication inside a neural network. The highlighted block has **already executed**, so the displayed values are its results.
 
 ### Use the walkthrough
@@ -58,16 +60,19 @@ Select **TD3 policy** as the preview controller, then switch from **Simulation**
 
 | Control | Behavior |
 | --- | --- |
-| **Trace loop: Preview · no learning** | Runs the selected preview controller. TD3 uses its actor without exploration; no preview controller writes replay or updates weights. |
-| **Trace loop: Training · updates weights** | Collects TD3 training experience and performs eligible replay updates on the active learner. |
+| **Run mode: Preview · no learning** | Runs the selected preview controller. TD3 uses its actor without exploration; no preview controller writes replay or updates weights. |
+| **Run mode: Training · updates weights** | Collects TD3 training experience and performs eligible replay updates on the active learner. |
 | **Next block** | Executes the next stage and displays its actual values. |
 | **Finish this step / Next AUV step** | The label reflects the current stage. Finish this step completes the current transition and its eligible learning work. At a completed transition, Next AUV step runs one new complete transition. |
 | **Play blocks / Pause blocks** | Advances through blocks automatically, or holds the current stage for inspection. Automatic playback pauses when the tab becomes hidden. |
-| **Block pace** | Changes the reading time between blocks, without changing the physics integration interval or learning settings. |
-| **Exploration noise** | The training-only field sets collection noise from `0` to `0.5` and stays synchronized with the ordinary training slider. |
+| **Options → Block pace** | Changes the reading time between blocks, without changing the physics integration interval or learning settings. |
+| **Options → Exploration noise** | The training-only field sets collection noise from `0` to `0.5` and stays synchronized with the ordinary training slider. |
+| **All variables** | Expands the full values recorded for the current block, using their source-code names. The key-value summary remains available above it. |
 | **Simulation** | Completes only any in-flight transition/update, then returns to ordinary controls with the run paused. |
 
-Pause blocks when you want to examine a stage without advancing it. Returning to Simulation is different: it completes the remaining work for that transition so that replay entries, counters, and optimizer state stay consistent. Changing the trace loop or exploration-noise setting also finishes an in-flight transition before starting the next one with the new settings. Ordinary playback, reset, training, evaluation, and checkpoint controls are disabled while the walkthrough is active; return to Simulation to use them.
+Pause blocks when you want to examine a stage without advancing it. Opening Options, All variables, the called implementation, or the observation details also pauses automatic playback, giving you time to read. You can still advance manually with Next block. Keyboard focus moves to Next block when you enter the walkthrough and returns to Code walkthrough when you leave.
+
+Returning to Simulation completes the remaining work for the current transition so that replay entries, counters, and optimizer state stay consistent. Changing the run mode or exploration-noise setting also finishes an in-flight transition before starting the next one with the new settings. Return to Simulation for ordinary playback, reset, training budgets, evaluation, and checkpoints.
 
 To inspect learning, select **Training · updates weights**. The existing exploration-noise setting applies until you change it. This loop continues as you advance blocks; it does not use the ordinary training-budget field. For a shorter first learning walkthrough, keep the included trained policy: its initial warm-up is already complete, although loading it starts with empty replay, so it must collect 32 transitions before the first new update. A fresh model still performs the usual 1,000 random warm-up transitions. The walkthrough shows when learning is skipped and why; it does not silently bypass those rules.
 
@@ -75,7 +80,7 @@ To reach the learning stages quickly, stay in **Simulation** with the included p
 
 The goal/collision result remains visible while you inspect the remaining stages of a terminal transition. The episode reset is a later stage, so arrival is not immediately hidden by a new starting position.
 
-Expand the called implementation to inspect how observation features are calculated, the actor's matrix operations and activations, the environment's motion/collision/reward calculation, or the target-weight interpolation. The observation expander lists all 21 normalized features. At replay sampling, it instead shows the first sampled row's stored state and successor side by side.
+Expand the called implementation to inspect how observation features are calculated, the actor's matrix operations and activations, the environment's motion/collision/reward calculation, or the target-weight interpolation. The observation expander lists all 21 normalized features. At replay sampling, it instead shows the first sampled row's stored state and successor side by side. All variables retains every recorded value for the stage, including values omitted from the compact summary.
 
 ### Follow a control step
 
@@ -178,9 +183,11 @@ The JavaScript verification suite passed **77 tests**: 32 environment, 12 TD3, 2
 
 ### Walkthrough validation
 
-The [walkthrough validation report](walkthrough-validation.json) records **14 focused trace integration tests** and an offline check of the generated HTML in Chromium `134.0.6998.35`. The browser check observed **zero network requests and zero page errors**. At a 390-pixel viewport, the document width was also 390 pixels.
+The [walkthrough validation report](walkthrough-validation.json) records **14 focused trace integration tests** and an offline check of the generated HTML in Chromium `134.0.6998.35`. The browser check observed **zero network requests and zero page errors**. The report includes the tested HTML's size and SHA-256 checksum.
 
-The checks covered staged execution against ordinary execution, numerical Bellman-target values from actual replay samples, delayed actor and target updates, preview isolation from learning, and pausing at a stage. The walkthrough layout was also inspected visually. These checks support the connection between the displayed code, its live values, and the simulation state; they do not establish broader navigation performance.
+The revised walkthrough fit the captured **1366 × 768** desktop viewport with the tank, code, and four key values visible. At **390 pixels** wide, the document was also 390 pixels wide; the mobile controls remained visible while inspecting source and values. Source text used **13 px on desktop and 12 px on mobile**, wrapping without horizontal code scrolling. In the captured baseline before the layout cleanup, desktop/mobile code used 11/10 px and document heights were 2,619/5,272 px; the revised captured heights were 768/1,348 px. These are measurements of the captured stages with their disclosure states, not fixed heights for every possible view.
+
+The checks covered staged execution against ordinary execution, numerical Bellman targets from actual replay samples, delayed actor and target updates, preview isolation, and pausing at a stage. They also checked disclosures without unintended execution, access to all recorded variables, correct labeling of critic summaries as minibatch values, focus restoration, source wrapping, the visible Bellman assignment, and hiding the dashboard only during walkthrough mode. Screenshots were inspected visually. The ordinary browser regression again completed 1,200 training steps with 200 critic and 100 actor updates and reached 10/10 goals on the same fixed reef suite. These checks support the displayed execution and layout; they do not establish broader navigation performance.
 
 ## Source and rebuilding
 
@@ -241,7 +248,7 @@ The additional [scripts/check_trace_browser.cjs](../scripts/check_trace_browser.
 | Engine cannot start | Read the visible error and check whether the browser/viewer permits Blob Web Workers. Use a normal browser tab for the saved file. |
 | Training is slow | Use a smaller budget, keep the tab active, or reset for the fresh 64-unit model. Save the active learned model first if needed. |
 | AUV holds still while code advances | The current block may be reading observations, choosing an action, or updating networks. Only the environment step moves the vehicle. |
-| Walkthrough does not update weights yet | Select the Training trace loop and inspect the warm-up/replay explanation. Preview does not train. |
+| Walkthrough does not update weights yet | Choose Training in Run mode and inspect the warm-up/replay explanation. Preview does not train. |
 | Replay values differ from the current tank | The displayed training row is sampled from stored experience and can come from an earlier position or episode. |
 | Edited scene/seed/current has no effect | Click Reset experiment to apply staged settings; this also replaces the learner. |
 | Reload shows the original example | Reopening restores the embedded model. Import your downloaded checkpoint to restore a separately saved policy. |

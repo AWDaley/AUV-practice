@@ -15,106 +15,222 @@
 @media(max-width:450px){.app-shell{padding:0 12px}.connection{font-size:9px;gap:6px}.brand{gap:9px}.intro{padding-top:22px}h1{font-size:28px}.intro-copy{font-size:11px}.run-status #run-message{font-size:10px;min-width:160px}.policy-status{width:100%;margin-left:0;padding-left:0;font-size:10px}.tank-heading{padding:16px}.tank-heading h2{gap:7px}.episode-counter{gap:7px}.episode-counter span{font-size:9px}.tank-wrap{height:330px}.transport{gap:8px;padding-left:14px;padding-right:14px}.controller-field{min-width:110px}.transport-buttons{gap:4px}.transport-buttons .icon-button{width:31px;padding:7px}.transport-buttons .play-button{min-width:62px;padding:9px 8px;font-size:11px;gap:5px}.play-button svg{width:13px}.speed-field{width:51px}.transport select{font-size:10px;padding-left:8px;padding-right:21px;background-position:right 7px center}.controller-note{padding-left:14px;padding-right:14px;font-size:9px}.live-metrics>div{padding:0 10px}.live-metrics strong{font-size:21px}.live-metrics span{font-size:8px}.live-metrics small{font-size:7px}.tank-legend{gap:13px}.view-options{padding-left:15px;padding-right:15px;gap:12px}.current-readout{font-size:8px}.view-label{font-size:7px}.view-options label{font-size:9px}.chart-grid{grid-template-columns:1fr;gap:23px}.chart-title{flex-direction:row;align-items:center}.chart-title h3{font-size:12px}.chart-wrap{height:170px}.chart-key{font-size:9px;padding-left:31px;gap:16px}.diagnostics-grid{grid-template-columns:1fr}.telemetry-grid{grid-template-columns:repeat(3,1fr);gap:19px 12px}.diagnostics-grid .subtle-badge{display:inline-block}.diagnostics-grid h2{font-size:17px}.action-readout{flex-direction:row}.control-column{grid-template-columns:1fr}.control-panel .section-kicker{font-size:9px;letter-spacing:1.3px}.control-panel h2{font-size:18px}.control-panel .panel-description{font-size:12px}.form-stack .field>label,.label-row label{font-size:12px}.field-hint,.fine-print{font-size:10px}.control-panel input[type=number],.control-panel select{height:42px;font-size:13px}.control-panel .button{min-height:43px;font-size:12px}.control-panel .field-pair{gap:15px}.algorithm-tag{display:block;font-size:7px}.footer{font-size:9px}.history-summary{font-size:9px;gap:8px 14px}.panel-heading{padding-left:18px;padding-right:18px}.error-banner{font-size:11px;padding:11px}.field-pair .field>label{font-size:12px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}*,*::before,*::after{animation:none!important;transition:none!important}}
 
-/* Code walkthrough belongs to the standalone browser app. */
+/* Standalone walkthrough: one control bar, one scene, one code inspector. */
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 .mode-bar{display:flex;align-items:center;justify-content:space-between;gap:18px;margin:0 0 17px}
 .view-switch{display:flex;padding:4px;border:1px solid var(--border);border-radius:9px;background:#0a1924;gap:3px}
 .view-button{border:0;border-radius:6px;background:transparent;color:var(--muted);padding:9px 16px;font-size:12px;font-weight:600;white-space:nowrap}
 .view-button span{color:var(--teal);font-family:ui-monospace,SFMono-Regular,Consolas,monospace;margin-right:5px}
 .view-button:hover:not(:disabled){background:#182d3b;color:var(--text)}
-.view-button.is-selected{background:#203c49;color:#e8fbf5;box-shadow:0 1px 3px #0003}
+.view-button.is-selected,.view-button.is-selected:disabled{background:#203c49;color:#e8fbf5;opacity:1;cursor:default;box-shadow:0 1px 3px #0003}
 .mode-bar>p{font-size:11px;color:var(--dim);text-align:right}
-.walkthrough-on .intro{display:none}
-.walkthrough-on .mode-bar{margin-top:21px}
-.walkthrough-on .masthead{min-height:72px}
-.walkthrough-on .mode-pill[data-mode=walkthrough]{background:#183d43;color:var(--teal)}
-.trace-toolbar{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:15px 22px;padding:18px 21px 13px;margin-bottom:19px;border:1px solid #2a4e53;border-radius:12px;background:linear-gradient(120deg,#13303988,transparent 70%),#0e202c}
-.trace-setup{display:flex;align-items:flex-end;gap:15px;min-width:0;flex:1}
-.trace-setup>.field:first-child{width:210px;flex:none}
-.trace-setup>p{font-size:11px;color:var(--muted);line-height:1.7;max-width:260px;padding-bottom:1px}
-.trace-noise-field{max-width:120px;flex:none}
-.trace-noise-field input{height:39px}
-.trace-transport{display:flex;align-items:flex-end;gap:9px;flex-wrap:wrap}
-.trace-transport>.button{height:40px}
-.trace-pace-field{width:88px;margin-left:5px}
-.trace-pace-field label,.trace-setup label{font-size:10px}
-.trace-transport-note{flex-basis:100%;font-size:10px;color:#88a5b5;margin-top:-4px}
-.code-mode.workspace{grid-template-columns:minmax(0,1fr)}
-.code-mode>.main-column{display:grid;grid-template-columns:minmax(0,.92fr) minmax(0,1.08fr);align-items:start;gap:20px}
-.code-mode>.main-column>.learning-panel,.code-mode>.main-column>.diagnostics-grid{grid-column:1/-1}
-.code-mode>.control-column{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:start;gap:18px}
-.code-mode .tank-panel{position:sticky;top:16px}
-.code-mode .tank-wrap{height:475px}
+
+/* Hide the ordinary dashboard only while the walkthrough owns the experiment. */
+.walkthrough-on .intro,.walkthrough-on #run-status,.walkthrough-on .mode-bar>p,.walkthrough-on .footer,
+.code-mode>.main-column>.learning-panel,.code-mode>.main-column>.diagnostics-grid,.code-mode>.control-column{display:none}
+.walkthrough-on .app-shell{padding-bottom:16px}
+.walkthrough-on .masthead{min-height:56px}
+.walkthrough-on .brand-mark{width:30px;height:30px;border-radius:8px}
+.walkthrough-on .brand{font-size:17px}
+.walkthrough-on .mode-bar{margin:10px 0}
+.walkthrough-on .view-switch{padding:3px}
+.walkthrough-on .view-button{min-height:36px;padding:7px 14px;line-height:18px}
+
+/* Playback stays in one row on desktop; advanced settings use a disclosure. */
+.trace-toolbar{display:flex;align-items:center;gap:12px;position:relative;z-index:10;margin-bottom:12px;padding:10px 12px;border:1px solid #2b4652;border-radius:10px;background:#10232e}
+.trace-setup{min-width:0;margin-right:auto}
+.trace-setup>.field{display:flex;flex-direction:row;align-items:center;gap:10px}
+.trace-setup label{font-size:11px;color:#a9c1cd;white-space:nowrap}
+.trace-setup select{width:218px;height:44px;font-size:12px}
+.trace-transport{display:flex;align-items:center;gap:8px;min-width:0}
+.trace-transport>.button{min-height:44px;padding:10px 14px;font-size:12px}
+.trace-options{position:relative;flex:none;align-self:stretch}
+.trace-options>summary{display:flex;align-items:center;justify-content:center;gap:8px;min-height:44px;list-style:none;cursor:pointer;padding:10px 13px;border:1px solid #304b5b;border-radius:7px;color:#bfd1db;font-size:12px;font-weight:550;background:#132a37}
+.trace-options>summary::after{content:"⌄";font-size:14px;line-height:1;color:#92afbd}
+.trace-options>summary::-webkit-details-marker{display:none}
+.trace-options[open]>summary{border-color:#5c9b93;color:#def4ed;background:#193a3d}
+.trace-options-menu{position:absolute;top:calc(100% + 8px);right:0;width:280px;padding:17px;border:1px solid #395665;border-radius:10px;box-shadow:0 14px 35px #0006;background:#10232f;display:grid;grid-template-columns:1fr 1fr;gap:15px}
+.trace-options-menu .field{min-width:0}
+.trace-options-menu label{font-size:11px;color:#b3c9d5}
+.trace-options-menu input,.trace-options-menu select{height:42px;font-size:12px}
+.trace-options-menu p{grid-column:1/-1;font-size:11px;line-height:1.6;color:#a1bbc8}
+.trace-options-menu .trace-transport-note{font-size:10px;color:#86a3b3;border-top:1px solid var(--border);padding-top:12px}
+.trace-options>summary:focus-visible{outline:2px solid var(--teal);outline-offset:3px}
+.trace-panel summary:focus-visible{outline:2px solid var(--teal);outline-offset:-3px}
+
+/* Both panels share a stable height, so changing execution stages cannot jump the page. */
+.code-mode.workspace{display:block}
+.code-mode>.main-column{display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr);gap:14px;align-items:stretch;height:max(510px,calc(100dvh - 214px))}
+.code-mode .panel{border-radius:12px;box-shadow:none}
+.code-mode .tank-panel{display:flex;flex-direction:column;min-height:0;position:static}
+.code-mode .tank-heading{padding:12px 16px;min-height:50px;flex:none}
+.code-mode .tank-heading .section-kicker{display:none}
+.code-mode .tank-heading h2{font-size:17px;gap:8px}
+.code-mode .tank-heading .episode-counter{display:flex;flex-direction:row;align-items:center;gap:8px;font-size:10px}
+.code-mode .tank-heading .episode-counter strong{font-size:20px}
+.code-mode .tank-wrap{height:auto;min-height:200px;flex:1}
+.code-mode .tank-corner-label{top:12px;left:16px;font-size:9px}
+.code-mode .tank-legend{bottom:9px;font-size:9px;gap:15px}
+.code-mode .view-options{flex:none;padding:8px 16px;gap:12px;font-size:10px}
+.code-mode .view-label{display:none}
+.code-mode .current-readout{font-size:9px}
 .code-mode .tank-panel .transport,.code-mode .tank-panel .controller-note{display:none}
-.code-mode .tank-heading{padding:18px 20px}
-.code-mode .tank-heading .episode-counter{flex-direction:row;align-items:center;gap:8px}
-.code-mode .live-metrics{grid-template-columns:repeat(4,minmax(0,1fr));padding:17px 0}
-.code-mode .live-metrics>div{padding:0 15px;border-bottom:0}
-.code-mode .live-metrics>div:nth-child(2){border-right:1px solid var(--border-soft)}
-.code-mode .live-metrics strong{font-size:24px}
-.code-mode .live-metrics span{font-size:9px}
-.trace-tank-status{display:flex;align-items:center;gap:8px;padding:12px 19px;background:#10252e;border-bottom:1px solid var(--border-soft);font-size:11px;color:#abc4ce;min-height:46px}
-.trace-tank-dot{height:6px;width:6px;border-radius:50%;background:#678fa5;flex:none}
+.code-mode .live-metrics{flex:none;grid-template-columns:repeat(4,minmax(0,1fr));padding:13px 0;background:#10212d}
+.code-mode .live-metrics>div{padding:0 12px;border-right:1px solid var(--border-soft);border-bottom:0}
+.code-mode .live-metrics>div:last-child{border-right:0}
+.code-mode .live-metrics span{font-size:9px;margin-bottom:3px;white-space:nowrap}
+.code-mode .live-metrics strong{font-size:22px;line-height:1.25;letter-spacing:-.4px}
+.code-mode .live-metrics small{font-size:8px;margin-top:3px}
+.trace-tank-status{display:flex;align-items:center;gap:8px;flex:none;min-height:42px;padding:9px 16px;font-size:11px;line-height:1.55;color:#a8c4cd;background:#0e252e;border-bottom:1px solid var(--border-soft)}
+.trace-tank-dot{height:6px;width:6px;border-radius:50%;background:#709aaa;flex:none}
 .tank-panel[data-trace-stage=environment] .trace-tank-dot{background:var(--teal);box-shadow:0 0 0 4px #61dfc415}
-.tank-panel[data-trace-stage=environment] .tank-wrap{box-shadow:inset 0 0 0 2px #61dfc450}
-.trace-panel{min-width:0;border-color:#34535a;background:#0e1f2a}
-.trace-heading{padding:19px 21px 0}
-.trace-heading h2{font-size:18px}
-.trace-heading .section-kicker{color:#86aaa9}
-.trace-heading .subtle-badge{font-size:9px}
-.trace-flow{display:flex;justify-content:space-between;gap:5px;padding:18px 21px 16px;margin:0;list-style:none;border-bottom:1px solid var(--border-soft)}
-.trace-flow li{display:flex;align-items:center;gap:6px;font-size:10px;color:#7694a4;white-space:nowrap}
-.trace-flow li>span{display:inline-grid;place-items:center;border:1px solid #304953;border-radius:50%;width:21px;height:21px;font-size:9px;font-variant-numeric:tabular-nums}
-.trace-flow li.is-current{color:var(--teal);font-weight:650}
-.trace-flow li.is-current>span{background:#224a47;border-color:#6acfb9}
-.trace-flow li.is-past{color:#b8d3db}
-.trace-flow li.is-past>span{border-color:#496d70;color:#9cd7c9}
-.trace-flow li.is-inactive{opacity:.38}
-.trace-stage-intro{padding:18px 21px 17px;min-height:133px}
-.trace-stage-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:7px}
-.trace-stage-kind{color:#85cfbc;font-size:9px;font-weight:600;letter-spacing:1.2px}
-.trace-sequence{color:var(--dim);font-size:10px;font-variant-numeric:tabular-nums}
-.trace-stage-intro h3{font-size:18px;font-weight:550;letter-spacing:-.3px;color:#f0f8fb}
-.trace-stage-intro p{margin-top:7px;font-size:12px;color:#a6bdc9;line-height:1.65;min-height:39px}
-.trace-source-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 18px;background:#122c37;border-top:1px solid #31505a;border-bottom:1px solid #25434b;color:#8bd7c8;font:10px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace}
+.tank-panel[data-trace-stage=environment] .tank-wrap{box-shadow:inset 0 0 0 2px #61dfc435}
+
+/* Current block, its source, and a short set of useful values form the inspector. */
+.trace-panel{display:flex;flex-direction:column;min-width:0;min-height:0;background:#0e202b;border-color:#304c58}
+.trace-panel-top{flex:none;border-bottom:1px solid var(--border-soft)}
+.trace-panel-top #trace-boundary{display:none}
+.trace-flow{display:flex;align-items:center;gap:5px;margin:0;padding:7px 12px;list-style:none;min-height:38px}
+.trace-flow li{flex:1;display:flex;align-items:center;justify-content:center;padding:4px 7px;border-radius:5px;font-size:11px;line-height:1.5;color:#819eae;white-space:nowrap}
+.trace-flow li>span{display:none}
+.trace-flow li.is-current{background:#21473f;color:#a4efda;font-weight:600}
+.trace-flow li.is-past{color:#b1cbd4}
+.trace-flow li.is-inactive{display:none}
+.trace-stage-intro{flex:none;padding:12px 18px 13px}
+.trace-stage-heading{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.trace-stage-intro h3{font-size:19px;font-weight:600;line-height:1.35;letter-spacing:-.3px;color:#eef7f8}
+.trace-sequence{flex:none;font-size:10px;color:#86a4b2;font-variant-numeric:tabular-nums;white-space:nowrap}
+.trace-stage-intro p{margin-top:6px;font-size:12px;line-height:1.55;color:#a9c1cc}
+.trace-code-region{display:flex;flex-direction:column;min-height:140px;flex:1;overflow:hidden;background:#091923;border-top:1px solid #27414e;border-bottom:1px solid #27414e}
+.trace-source-bar{display:flex;align-items:center;justify-content:space-between;gap:10px;flex:none;padding:7px 16px;background:#112b36;color:#9ad5c8;font:11px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace}
 #trace-source-file{overflow-wrap:anywhere}
-#trace-source-range{color:#87a6b5;white-space:nowrap}
-.trace-code-scroll{overflow:auto;max-height:245px;background:#091923;scrollbar-color:#35545e #091923;scrollbar-width:thin}
-.trace-code{margin:0;padding:12px 0;min-width:max-content;font:11px/1.85 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;tab-size:2;color:#d2e4ec}
-.trace-code-line{display:flex;min-height:20px;background:#153c3a35;border-left:3px solid #61dfc47a;padding-right:18px;min-width:max-content}
-.trace-line-number{display:block;min-width:51px;flex:none;text-align:right;padding-right:14px;color:#657f8e;user-select:none}
-.trace-line-text{display:block;white-space:pre}
-.trace-token-keyword{color:#beabeb}.trace-token-string{color:#b4d597}.trace-token-number{color:#efbb8c}.trace-token-comment{color:#6e939a}
-.trace-source-detail{border-top:1px solid var(--border-soft);border-bottom:1px solid var(--border-soft)}
-.trace-source-detail summary,.trace-observation-detail summary{cursor:pointer;color:#8fb8ca;font-size:11px;padding:11px 21px}
-.trace-source-detail summary:focus-visible,.trace-observation-detail summary:focus-visible{outline:2px solid var(--teal);outline-offset:-3px}
-.trace-source-detail[open] summary{color:#c1e0e9}
-.trace-detail-location{font:10px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;color:#7c9daa;padding:0 21px 9px;overflow-wrap:anywhere}
-.trace-detail-code .trace-code-line{background:transparent;border-color:transparent}
-.trace-detail-scroll{max-height:260px}
-.trace-values-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 21px 0}
-.trace-values-heading h3{font-size:12px;color:#d6e9ef;font-weight:550}
-.trace-values-heading>span{font-size:9px;padding:3px 7px;background:#1b333f;border:1px solid #2c4855;border-radius:4px;color:#97b6c6}
-.trace-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 19px;padding:2px 21px 16px;margin:0}
-.trace-watch{min-width:0;padding:10px 0 9px;border-bottom:1px solid #233b46}
+#trace-source-range{color:#89a8b7;white-space:nowrap;flex:none}
+.trace-code-scroll{min-height:0;overflow:auto;flex:1;scrollbar-width:thin;scrollbar-color:#3b5b67 #0b1b26;background:#091923;overscroll-behavior:contain}
+.trace-code{margin:0;padding:10px 0 12px;width:100%;min-width:0;font:13px/1.65 ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;tab-size:2;color:#d8e7ed;white-space:normal}
+.trace-code-line{display:flex;align-items:flex-start;width:100%;min-width:0;min-height:21px;border-left:2px solid #58bfaa73;background:#173d3835;padding-right:14px}
+.trace-code-line.is-focus{background:#24534580;border-left-color:#8be6cc}
+.trace-line-number{display:block;width:46px;min-width:46px;flex:none;text-align:right;padding-right:12px;color:#7393a2;user-select:none;font-size:11px;line-height:21.45px}
+.trace-line-text{display:block;flex:1;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;word-break:normal}
+.trace-token-keyword{color:#c6b5ee}.trace-token-string{color:#bfdc9d}.trace-token-number{color:#edbf91}.trace-token-comment{color:#87abae}
+.trace-source-detail{border-top:1px solid #243d49;background:#0d202b}
+.trace-source-detail>summary,.trace-all-values>summary,.trace-observation-detail>summary{cursor:pointer;padding:9px 16px;font-size:11px;line-height:1.55;color:#a2c3d0}
+.trace-source-detail[open]>summary,.trace-all-values[open]>summary,.trace-observation-detail[open]>summary{color:#d4ede7}
+.trace-detail-location{padding:0 16px 8px;color:#8eacb8;font:10px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
+.trace-detail-scroll{display:block;overflow:visible;max-height:none;min-height:0;flex:none;background:transparent}
+.trace-detail-code .trace-code-line{border-color:transparent;background:transparent}
+.trace-inspector{flex:0 1 auto;min-height:132px;max-height:245px;overflow:auto;scrollbar-width:thin;scrollbar-color:#3b5b67 #0e202b;overscroll-behavior:contain;background:#10232e}
+.trace-values-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 18px 3px}
+.trace-values-heading h3{font-size:11px;line-height:1.5;font-weight:550;color:#bed4df}
+.trace-values-heading>span{font-size:10px;line-height:1.5;color:#8cb5bd}
+.trace-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:0 20px;margin:0;padding:0 18px 8px}
+.trace-watch{min-width:0;padding:6px 0;border-bottom:1px solid #28404b}
 .trace-watch.wide{grid-column:1/-1}
-.trace-watch dt{color:#8ca8b8;font:10px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere;margin:0 0 3px}
-.trace-watch dd{margin:0;color:#dbedea;font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
-.trace-watch dd.is-true{color:var(--teal)}.trace-watch dd.is-false{color:#a4bac7}
-.trace-equation{margin:0 21px 17px;padding:12px 13px;background:#15383166;border:1px solid #356255;border-radius:7px;color:#c5efdf;font:11px/1.8 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
-.trace-equation strong{color:var(--teal)}
-.trace-equation small{display:block;color:#90b7ac;font:10px/1.65 ui-sans-serif,system-ui,sans-serif;margin-top:5px}
-.trace-observation-detail{margin:0 0 13px;border-top:1px solid var(--border-soft)}
-.trace-observation-detail>p{font-size:10px;color:var(--dim);padding:0 21px 10px}
-.trace-observation-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:0 21px 7px}
-.trace-feature{padding:7px 9px;background:#132d38;border:1px solid #244450;border-radius:5px;min-width:0}
-.trace-feature span{display:block;font-size:8px;color:#8eafbb;overflow-wrap:anywhere}
-.trace-feature strong{font:11px/1.8 ui-monospace,SFMono-Regular,Consolas,monospace;color:#b8e5d6;font-variant-numeric:tabular-nums}
-.trace-footer{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;border-top:1px solid var(--border-soft);padding:12px 21px;background:#0c1c27;font-size:9px;color:#769aa9}
-.trace-footer>span:first-child{color:#a7c3cd;font-variant-numeric:tabular-nums}
-@media(min-width:1500px){.code-mode .tank-wrap{height:505px}}
-@media(max-width:1200px){.trace-setup>p{max-width:230px}.trace-toolbar{gap:14px}.trace-transport{gap:7px}.trace-transport .button{padding:9px 12px}.code-mode .tank-wrap{height:415px}.code-mode>.main-column{grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:16px}.code-mode>.control-column{grid-template-columns:repeat(2,minmax(0,1fr))}.code-mode .live-metrics{grid-template-columns:repeat(2,minmax(0,1fr));padding:0}.code-mode .live-metrics>div{padding:12px 18px}.code-mode .live-metrics>div:nth-child(2){border-right:0}.code-mode .live-metrics>div:nth-child(-n+2){border-bottom:1px solid var(--border-soft)}.trace-flow{padding-left:16px;padding-right:16px;gap:4px}.trace-flow li{font-size:9px;gap:4px}.trace-flow li>span{width:18px;height:18px}.trace-heading{padding-left:18px;padding-right:18px}.trace-heading h2{font-size:16px}.trace-heading .subtle-badge{font-size:8px;padding:4px 6px}}
-@media(max-width:950px){.trace-setup{flex-basis:100%;align-items:center}.trace-setup>p{max-width:none;padding-top:15px}.trace-transport{flex:1}.trace-pace-field{margin-left:auto}.mode-bar>p{max-width:220px}.code-mode>.main-column{grid-template-columns:minmax(0,1fr)}.code-mode .tank-panel{position:static}.code-mode .tank-wrap{height:350px}.code-mode .live-metrics{grid-template-columns:repeat(4,minmax(0,1fr));padding:14px 0}.code-mode .live-metrics>div{padding:0 18px;border-bottom:0!important}.code-mode .live-metrics>div:nth-child(2){border-right:1px solid var(--border-soft)}.trace-flow{justify-content:flex-start;gap:27px}.trace-flow li{font-size:11px}.trace-flow li>span{width:22px;height:22px}.trace-stage-intro{min-height:0}.trace-code{font-size:12px}.trace-heading h2{font-size:18px}.trace-values{grid-template-columns:repeat(3,minmax(0,1fr))}.trace-watch.wide{grid-column:1/-1}}
-@media(max-width:600px){.mode-bar{gap:10px;align-items:flex-start;flex-direction:column}.mode-bar>p{text-align:left;font-size:10px;max-width:none}.view-switch{width:100%}.view-button{flex:1;padding:9px 10px;font-size:11px}.walkthrough-on .mode-bar{margin-top:15px}.walkthrough-on .masthead{min-height:66px}.trace-toolbar{padding:14px;gap:13px}.trace-setup{flex-wrap:wrap;gap:12px}.trace-setup>.field:first-child{width:auto;flex:1}.trace-setup>p{flex-basis:100%;font-size:10px;padding-top:0}.trace-noise-field{max-width:105px}.trace-transport{display:grid;grid-template-columns:1fr 1fr;gap:9px;width:100%}.trace-transport>.button{min-width:0;padding:9px 10px;font-size:11px}.trace-pace-field{width:100%;margin:0;display:flex;flex-direction:row;align-items:center;gap:8px}.trace-pace-field>label{font-size:9px;white-space:nowrap}.trace-pace-field>select{min-width:0;font-size:11px;padding-left:9px}.trace-transport-note{font-size:9px;margin:0}.code-mode .tank-heading{padding:15px 16px}.code-mode .tank-heading h2{font-size:17px}.code-mode .tank-wrap{height:330px}.code-mode .live-metrics>div{padding:0 9px}.code-mode .live-metrics span{font-size:8px}.code-mode .live-metrics strong{font-size:21px}.trace-tank-status{font-size:10px;padding:11px 15px}.trace-heading{padding:17px 16px 0}.trace-heading h2{font-size:17px}.trace-flow{justify-content:space-between;gap:4px;padding:16px 13px 13px}.trace-flow li{font-size:9px;gap:3px}.trace-flow li>span{width:17px;height:17px;font-size:8px}.trace-stage-intro{padding:15px 16px}.trace-stage-intro h3{font-size:17px}.trace-stage-intro p{font-size:11px}.trace-code{font-size:10px}.trace-line-number{min-width:40px;padding-right:10px}.trace-source-bar{padding:9px 14px;font-size:9px}.trace-values-heading{padding:15px 16px 0}.trace-values-heading h3{font-size:11px}.trace-values{grid-template-columns:repeat(2,minmax(0,1fr));padding:2px 16px 15px;gap:0 13px}.trace-watch dt{font-size:9px}.trace-watch dd{font-size:11px}.trace-equation{margin-left:16px;margin-right:16px;font-size:10px}.trace-footer{padding:11px 16px;font-size:8px}.code-mode>.control-column{grid-template-columns:minmax(0,1fr)}.trace-observation-grid{padding-left:16px;padding-right:16px}.trace-feature span{font-size:7px}.trace-feature strong{font-size:10px}}
+.trace-watch dt{font:11px/1.45 ui-sans-serif,system-ui,sans-serif;color:#91b0be;margin:0 0 2px;overflow-wrap:anywhere}
+.trace-watch dt code,.trace-watch dt small{font:10px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;color:#6f93a4}
+.trace-watch dd{margin:0;font:13px/1.5 ui-monospace,SFMono-Regular,Consolas,monospace;color:#dfefeb;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.trace-watch dd.is-true{color:#8be6cc}.trace-watch dd.is-false{color:#afc3cc}
+.trace-equation{margin:2px 18px 8px;padding:8px 10px;border-left:2px solid #6bc6ac;background:#143b3566;border-radius:0 5px 5px 0;color:#bfe2d7;font:11px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere}
+.trace-equation strong{color:#8be6cc;font-weight:650}
+.trace-equation small{display:block;margin-top:3px;font:10px/1.5 ui-sans-serif,system-ui,sans-serif;color:#8fb5ae}
+.trace-all-values,.trace-observation-detail{margin:0;border-top:1px solid #28404b}
+.trace-all-values .trace-values{padding-bottom:11px}
+.trace-all-values .trace-watch dt{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:10px}
+.trace-all-values .trace-watch dd{font-size:11px}
+.trace-observation-detail>p,.trace-all-values>p{padding:0 16px 10px;color:#91aebc;font-size:11px;line-height:1.55}
+.trace-observation-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px;padding:0 16px 12px}
+.trace-feature{padding:7px 9px;min-width:0;border-radius:5px;background:#17323e}
+.trace-feature span{display:block;color:#94b5c2;font-size:9px;line-height:1.4;overflow-wrap:anywhere}
+.trace-feature strong{display:block;color:#c1e7dc;font:11px/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.trace-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;flex:none;padding:7px 18px;border-top:1px solid #263e4b;background:#0c1e29;color:#88a5b5;font-size:9px;line-height:1.4;font-variant-numeric:tabular-nums}
+
+@media(max-width:1100px){
+ .trace-toolbar{gap:8px;padding:9px 10px}
+ .trace-setup>.field{gap:8px}.trace-setup select{width:196px;font-size:11px}
+ .trace-transport{gap:6px}.trace-transport>.button{padding:10px 11px;font-size:11px}
+ .trace-options>summary{padding:10px 11px;font-size:11px}
+ .code-mode>.main-column{gap:12px;grid-template-columns:minmax(0,.78fr) minmax(0,1.22fr)}
+ .code-mode .tank-heading{padding:12px}.code-mode .tank-heading h2{font-size:16px}
+ .code-mode .tank-heading .episode-counter span{font-size:9px}
+ .code-mode .live-metrics>div{padding:0 8px}.code-mode .live-metrics span{font-size:8px}
+ .code-mode .live-metrics strong{font-size:20px}.code-mode .live-metrics small{font-size:7px}
+ .code-mode .view-options{padding:8px 12px;gap:9px}.code-mode .current-readout{display:none}
+ .trace-tank-status{padding:9px 12px;font-size:10px}
+ .trace-stage-intro{padding:11px 15px 12px}.trace-stage-intro h3{font-size:18px}
+ .trace-stage-intro p{font-size:11px}.trace-sequence{font-size:9px}
+ .trace-flow{padding:7px 9px;gap:2px}.trace-flow li{font-size:10px;padding:4px 5px}
+ .trace-values-heading{padding-left:15px;padding-right:15px}.trace-values{padding-left:15px;padding-right:15px;gap:0 14px}
+ .trace-equation{margin-left:15px;margin-right:15px}.trace-footer{padding-left:15px;padding-right:15px;font-size:8px}
+}
+
+/* Narrow screens keep controls reachable and use a compact scene above the code. */
+@media(max-width:850px){
+ .walkthrough-on .app-shell{padding-bottom:16px}
+ .walkthrough-on .masthead{min-height:52px}
+ .walkthrough-on .mode-bar{margin:8px 0}
+ .trace-toolbar{position:sticky;top:0;z-index:20;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;padding:10px;margin-bottom:12px;border-radius:9px;background:#10232efa;box-shadow:0 5px 14px #0003}
+ .trace-setup{grid-column:1;grid-row:1;margin:0}
+ .trace-setup>.field{gap:9px}.trace-setup select{width:100%;height:44px;font-size:12px}
+ .trace-options{grid-column:2;grid-row:1}
+ .trace-options>summary{height:44px;font-size:12px}
+ .trace-transport{grid-column:1/-1;grid-row:2;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+ .trace-transport>.button{padding:9px 8px;font-size:12px;min-width:0;min-height:44px}
+ .trace-options-menu{width:min(300px,calc(100vw - 45px));z-index:25}
+ .code-mode>.main-column{height:auto;display:flex;flex-direction:column;gap:14px}
+ .code-mode .tank-panel{height:398px;flex:none}
+ .code-mode .tank-heading{padding:11px 15px;min-height:46px}
+ .code-mode .tank-heading h2{font-size:17px}
+ .code-mode .tank-heading .episode-counter span{font-size:10px}
+ .code-mode .tank-wrap{min-height:215px;flex:1;height:auto}
+ .code-mode .tank-corner-label{font-size:9px}
+ .code-mode .view-options{padding:7px 15px;gap:13px}
+ .code-mode .current-readout{display:block}
+ .code-mode .live-metrics{padding:11px 0}
+ .code-mode .live-metrics>div{padding:0 12px}
+ .code-mode .live-metrics span{font-size:9px}.code-mode .live-metrics strong{font-size:21px}.code-mode .live-metrics small{font-size:8px}
+ .trace-tank-status{min-height:36px;padding:7px 15px;font-size:10px}
+ .trace-panel{height:calc(100dvh - 148px);min-height:620px;flex:none;scroll-margin-top:132px}
+ .trace-panel-top{min-height:36px}.trace-flow{padding:6px 12px;gap:4px}.trace-flow li{font-size:11px;padding:4px 6px}
+ .trace-stage-intro{padding:12px 16px}.trace-stage-intro h3{font-size:19px}.trace-stage-intro p{font-size:12px}
+ .trace-code-region{min-height:160px}.trace-code{font-size:12px;line-height:1.7}.trace-code-line{min-height:20px}
+ .trace-line-number{width:42px;min-width:42px;padding-right:10px;font-size:10px;line-height:20.4px}
+ .trace-inspector{max-height:260px;scroll-margin-top:132px}
+ .trace-values-heading{padding:10px 16px 3px}.trace-values{padding:0 16px 8px}
+ .trace-equation{margin-left:16px;margin-right:16px}.trace-footer{padding:8px 16px;font-size:9px;flex-wrap:wrap;gap:3px 12px}
+}
+
+@media(max-width:600px){
+ .mode-bar{gap:10px;align-items:flex-start;flex-direction:column}.mode-bar>p{text-align:left;font-size:10px;max-width:none}
+ .view-switch{width:100%}.view-button{flex:1;padding:9px 10px;font-size:11px}
+ .walkthrough-on .view-button{padding:7px 10px;font-size:11px}.walkthrough-on .mode-bar{display:block}
+ .walkthrough-on .brand{font-size:16px}.walkthrough-on .brand-mark{width:28px;height:28px}
+ .walkthrough-on .connection{font-size:9px}
+ .trace-setup label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+ .trace-setup select{font-size:12px;padding-left:10px}
+ .trace-transport>.button{font-size:11px;gap:5px;padding:9px 7px}
+ .trace-transport>.button svg{width:14px;height:14px}
+ .code-mode .tank-panel{height:380px}
+ .code-mode .tank-heading h2{font-size:16px;flex-wrap:nowrap}.code-mode .tank-heading .subtle-badge{font-size:9px;padding:3px 6px}
+ .code-mode .tank-heading .episode-counter{gap:5px}.code-mode .tank-heading .episode-counter span{font-size:9px}
+ .code-mode .tank-wrap{min-height:200px}
+ .code-mode .tank-legend{font-size:8px;gap:14px}.code-mode .tank-corner-label{font-size:8px;top:10px}
+ .code-mode .view-options{padding:7px 13px;gap:10px;font-size:9px}.code-mode .view-options label{font-size:9px}
+ .code-mode .current-readout{font-size:8px}
+ .code-mode .live-metrics>div{padding:0 9px}.code-mode .live-metrics span{font-size:8px}.code-mode .live-metrics strong{font-size:20px}.code-mode .live-metrics small{font-size:7px}
+ .trace-tank-status{padding:7px 13px;font-size:10px}
+ .trace-flow{padding:6px 8px;gap:2px}.trace-flow li{font-size:10px;padding:4px 5px}
+ .trace-stage-intro{padding:11px 14px}.trace-stage-heading{gap:8px;align-items:flex-start}.trace-stage-intro h3{font-size:17px;line-height:1.4}.trace-sequence{font-size:9px;padding-top:3px}
+ .trace-stage-intro p{font-size:11px;line-height:1.6}
+ .trace-source-bar{padding:7px 12px;font-size:10px}
+ .trace-code-line{padding-right:10px}.trace-line-number{width:35px;min-width:35px;padding-right:8px}
+ .trace-source-detail>summary,.trace-all-values>summary,.trace-observation-detail>summary{padding:9px 13px;font-size:11px}
+ .trace-detail-location{padding-left:13px;padding-right:13px;font-size:9px}
+ .trace-values-heading{padding:10px 14px 3px}.trace-values-heading h3{font-size:11px}.trace-values-heading>span{font-size:9px}
+ .trace-values{padding-left:14px;padding-right:14px;gap:0 13px}.trace-watch dt{font-size:10px}.trace-watch dd{font-size:12px}
+ .trace-equation{margin-left:14px;margin-right:14px;font-size:10px;line-height:1.7}.trace-equation small{font-size:9px}
+ .trace-observation-grid{grid-template-columns:repeat(2,minmax(0,1fr));padding-left:13px;padding-right:13px}
+ .trace-feature span{font-size:9px}.trace-feature strong{font-size:11px}
+ .trace-footer{padding:7px 14px;font-size:8px}
+}
 
 </style>
 </head>
@@ -146,18 +262,24 @@
 
     <section id="trace-toolbar" class="trace-toolbar" aria-label="Code walkthrough controls" hidden>
       <div class="trace-setup">
-        <div class="field"><label for="trace-role">Trace loop</label><select id="trace-role"><option value="preview">Preview · no learning</option><option value="training">Training · updates weights</option></select></div>
-        <div class="field trace-noise-field" id="trace-noise-field" hidden><label for="trace-noise">Exploration noise</label><input id="trace-noise" type="number" min="0" max="0.5" step="0.01" value="0.15"></div>
-        <p id="trace-role-note">The actor controls the sub. Weights and replay stay unchanged.</p>
+        <div class="field"><label for="trace-role">Run mode</label><select id="trace-role"><option value="preview">Preview · no learning</option><option value="training">Training · updates weights</option></select></div>
       </div>
       <div class="trace-transport">
         <button id="trace-play" class="button button-primary" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 3 11 7-11 7z"/></svg><span id="trace-play-label">Play blocks</span></button>
         <button id="trace-next" class="button button-secondary" type="button">Next block <span aria-hidden="true">→</span></button>
         <button id="trace-tick" class="button button-outline" type="button" title="Finish this control step, or execute one new step if this one is complete">Next AUV step</button>
-        <div class="field trace-pace-field"><label for="trace-pace">Block pace</label><select id="trace-pace"><option value="1600">Slow</option><option value="800" selected>Steady</option><option value="300">Quick</option></select></div>
       </div>
-      <p class="trace-transport-note" id="trace-exit-note">The highlighted block has just executed. Switching back finishes the current control step and pauses.</p>
+      <details id="trace-options" class="trace-options">
+        <summary>Options</summary>
+        <div class="trace-options-menu">
+          <div class="field trace-pace-field"><label for="trace-pace">Block pace</label><select id="trace-pace"><option value="1600">Slow</option><option value="800" selected>Steady</option><option value="300">Quick</option></select></div>
+          <div class="field trace-noise-field" id="trace-noise-field" hidden><label for="trace-noise">Exploration noise</label><input id="trace-noise" type="number" min="0" max="0.5" step="0.01" value="0.15"></div>
+          <p id="trace-role-note">The actor controls the sub. Weights and replay stay unchanged.</p>
+          <p class="trace-transport-note" id="trace-exit-note">Opening details pauses playback. Returning to Simulation finishes the current control step and pauses.</p>
+        </div>
+      </details>
     </section>
+    <p id="trace-announcement" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></p>
 
     <main>
       <div class="workspace" id="workspace">
@@ -187,19 +309,33 @@
           </section>
 
           <section id="trace-panel" class="panel trace-panel" aria-labelledby="trace-title" hidden>
-            <div class="panel-heading trace-heading"><div><p class="section-kicker">LIVE EXECUTION · JAVASCRIPT</p><h2 id="trace-title">Inside this control step</h2></div><span id="trace-boundary" class="subtle-badge">Paused at a block</span></div>
-            <ol class="trace-flow" id="trace-flow" aria-label="Control step stages">
-              <li data-group="observe"><span>1</span>Observe</li><li data-group="act"><span>2</span>Act</li><li data-group="move"><span>3</span>Move</li><li data-group="store"><span>4</span>Store</li><li data-group="learn"><span>5</span>Learn</li><li data-group="finish"><span>6</span>Finish</li>
-            </ol>
-            <div class="trace-stage-intro"><div class="trace-stage-heading"><span id="trace-stage-kind" class="trace-stage-kind">OBSERVATION</span><span id="trace-sequence" class="trace-sequence">Block 1</span></div><h3 id="trace-stage-title">Read the observation</h3><p id="trace-explanation">Follow the real values used by the simulation.</p></div>
-            <div class="trace-source-bar"><span id="trace-source-file">web_src/worker.js</span><span id="trace-source-range"></span></div>
-            <div class="trace-code-scroll" id="trace-code-scroll" tabindex="0" aria-label="Executed source code"><pre class="trace-code" id="trace-code"></pre></div>
-            <details class="trace-source-detail" id="trace-source-detail" hidden><summary id="trace-source-detail-label">Open the called implementation</summary><div class="trace-detail-location" id="trace-detail-location"></div><div class="trace-code-scroll trace-detail-scroll" tabindex="0" aria-label="Called implementation source"><pre class="trace-code trace-detail-code" id="trace-detail-code"></pre></div></details>
-            <div class="trace-values-heading"><h3>Values from this block</h3><span id="trace-values-context">Live AUV</span></div>
-            <dl id="trace-values" class="trace-values"></dl>
-            <div id="trace-equation" class="trace-equation" hidden></div>
-            <details id="trace-observation-detail" class="trace-observation-detail" hidden><summary>Inspect the 21 observation features</summary><p>16 sonar ranges, 2 goal offsets, speed, and 2 current components. All values are normalized.</p><div id="trace-observation-grid" class="trace-observation-grid"></div></details>
-            <div class="trace-footer"><span id="trace-clock">Environment step 0 · Critic update 0</span><span>Actual source · no network required</span></div>
+            <h2 id="trace-title" class="sr-only">Code walkthrough</h2>
+            <div class="trace-panel-top">
+              <ol class="trace-flow" id="trace-flow" aria-label="Control step stages">
+                <li data-group="observe"><span>1</span>Observe</li><li data-group="act"><span>2</span>Act</li><li data-group="move"><span>3</span>Move</li><li data-group="store"><span>4</span>Store</li><li data-group="learn"><span>5</span>Learn</li><li data-group="finish"><span>6</span>Finish</li>
+              </ol>
+              <span id="trace-boundary" class="sr-only">Paused at a block</span>
+            </div>
+            <div class="trace-stage-intro">
+              <div class="trace-stage-heading"><h3 id="trace-stage-title">Read the observation</h3><span id="trace-sequence" class="trace-sequence">Step 1</span></div>
+              <span id="trace-stage-kind" hidden>OBSERVATION</span>
+              <p id="trace-explanation">Follow the real values used by the simulation.</p>
+            </div>
+            <div class="trace-code-region">
+              <div class="trace-source-bar"><span id="trace-source-file">web_src/worker.js</span><span id="trace-source-range"></span></div>
+              <div class="trace-code-scroll" id="trace-code-scroll" tabindex="0" aria-label="Executed source code">
+                <pre class="trace-code" id="trace-code"></pre>
+                <details class="trace-source-detail" id="trace-source-detail" hidden><summary id="trace-source-detail-label">Open the called implementation</summary><div class="trace-detail-location" id="trace-detail-location"></div><div class="trace-detail-scroll" aria-label="Called implementation source"><pre class="trace-code trace-detail-code" id="trace-detail-code"></pre></div></details>
+              </div>
+            </div>
+            <div id="trace-inspector" class="trace-inspector" tabindex="0" aria-label="Values from the executed block">
+              <div class="trace-values-heading"><h3>Key values</h3><span id="trace-values-context">Live AUV</span></div>
+              <dl id="trace-values" class="trace-values"></dl>
+              <div id="trace-equation" class="trace-equation" hidden></div>
+              <details id="trace-all-values" class="trace-all-values"><summary>All variables</summary><p id="trace-full-explanation"></p><dl id="trace-raw-values" class="trace-values trace-raw-values"></dl></details>
+              <details id="trace-observation-detail" class="trace-observation-detail" hidden><summary>Inspect the 21 observation features</summary><p>16 sonar ranges, 2 goal offsets, speed, and 2 current components. All values are normalized.</p><div id="trace-observation-grid" class="trace-observation-grid"></div></details>
+            </div>
+            <div class="trace-footer"><span>Highlighted code has just executed.</span><span id="trace-clock">Environment step 0 · Critic update 0</span></div>
           </section>
 
           <section class="panel learning-panel" aria-labelledby="learning-title">
@@ -327,9 +463,79 @@
     network_forward: "See the actor's matrix operations and activations",
     physics: "See motion, collision checks, and the reward calculation",
     soft_update: "See the target-weight interpolation" };
+  const focusFor = { bellman_target: "work.target[i] =", critic: "this.optimizers.q1.step",
+    actor_update: "this.optimizers.actor.step", target_actions: "output[i] = clamp" };
   const learningSamples = new Set(["replay_sample", "target_actions", "bellman_target", "critic", "actor_update"]);
   const featureNames = Array.from({ length: 21 }, (_, i) => i < 16 ? `sonar ${i}`
     : ["goal forward", "goal left", "speed", "current forward", "current left"][i - 16]);
+  const shortExplanation = {
+    reset: "Start the next episode. The policy and replay stay available.",
+    observation: "Read 21 normalized features describing sonar, the goal, speed, and current.",
+    actor: "One neural-network pass chooses acceleration and turn.",
+    random: "Choose a random acceleration and turn command.",
+    baseline: "The map-aware controller follows its planned route.",
+    exploration: "Add sampled exploration noise, then clip the command to [−1, 1].",
+    environment: "Apply the command, move the sub, and check the reward and outcome.",
+    replay_add: "Save this transition and its real successor before any episode reset.",
+    replay_sample: "Draw a batch of past experience. This row may differ from the live tank.",
+    target_actions: "Smooth the target actor's action for learning with clipped noise.",
+    bellman_target: "Add the reward to the discounted, smaller target-Q estimate.",
+    critic: "Fit both critics to the targets. These batch values were measured before the update.",
+    actor_update: "Improve the actor through Q1's action gradient.",
+    actor_skip: "The delay rule skips actor and target updates on this critic step.",
+    soft_targets: "Move target weights a fraction τ toward the online networks.",
+    learning_wait: "Collect more experience before running an optimizer update.",
+    episode: "Record the outcome. The final position stays visible until the next reset.",
+    transition_end: "This control step and its eligible learning work are complete.",
+  };
+
+  function keyValues(stage) {
+    const v = stage.values || {};
+    const pick = (key, label, unit = "") => ({ key, label, value: v[key], unit });
+    const action = key => [
+      { key: `${key}[0]`, label: "Acceleration", value: v[key]?.[0] },
+      { key: `${key}[1]`, label: "Turn", value: v[key]?.[1] },
+    ];
+    let items;
+    switch (stage.key) {
+      case "observation": items = [pick("goal_body", "Goal offset"), pick("speed_normalized", "Normalized speed"),
+        pick("current_body", "Body-frame current"), { key: "observation.length", label: "Input features", value: v.observation?.length }]; break;
+      case "actor": items = [...action("action"), { key: "actor_shape", label: "Network shape", value: v.actor_shape?.join(" → ") },
+        pick("controller", "Controller")]; break;
+      case "random": case "baseline": items = [...action("action"), pick("controller", "Controller"), pick("random_warmup", "Random warm-up")]; break;
+      case "exploration": items = [pick("actor_action", "Actor command"), pick("noise", "Sampled noise"),
+        pick("executed_action", "Applied command"), pick("exploration_std", "Noise scale")]; break;
+      case "environment": items = [pick("position_after", "Position", "m"), pick("goal_distance", "Goal distance", "m"),
+        pick("reward", "Reward"), pick("outcome", "Outcome")]; break;
+      case "replay_add": items = [pick("reward", "Stored reward"), pick("not_done", "Bootstrap mask"),
+        pick("replay_size", "Stored transitions"), pick("slot", "Replay slot")]; break;
+      case "replay_sample": items = [pick("action", "Stored command"), pick("reward", "Stored reward"),
+        pick("not_done", "Bootstrap mask"), pick("batch_size", "Batch size")]; break;
+      case "target_actions": items = [pick("proposed_action", "Target proposal"), pick("raw_noise", "Sampled noise"),
+        pick("clipped_noise", "Clipped noise"), pick("smoothed_action", "Smoothed action")]; break;
+      case "bellman_target": items = [pick("reward", "Reward"), pick("min_target_q", "Smaller target Q"),
+        pick("not_done", "Bootstrap mask"), pick("target", "TD target")]; break;
+      case "critic": items = [pick("critic_loss", "Critic loss"), pick("mean_absolute_td_error", "Mean |TD error|"),
+        pick("q1_mean", "Batch Q1"), pick("q2_mean", "Batch Q2")]; break;
+      case "actor_update": items = [pick("actor_loss", "Actor loss"), pick("actor_updates", "Actor updates"),
+        pick("critic_updates", "Critic updates"), pick("policy_delay", "Update interval")]; break;
+      case "actor_skip": items = [pick("update_actor", "Update actor"), pick("policy_delay", "Update interval"),
+        pick("critic_updates", "Critic updates"), pick("actor_updates", "Actor updates")]; break;
+      case "soft_targets": items = [pick("tau", "Target mix · τ"), ...["Actor", "Q1", "Q2"].map((name, i) => ({
+        key: `target_weights_before[${i}] → target_weights_after[${i}]`, label: `${name} target · first weight`,
+        value: `${v.target_weights_before[i].toFixed(6)} → ${v.target_weights_after[i].toFixed(6)}`,
+      }))]; break;
+      case "learning_wait": items = [pick("training_steps", "Collected steps"), pick("warmup_steps", "Warm-up requirement"),
+        pick("replay_size", "Stored transitions"), pick("batch_size", "Required batch size")]; break;
+      case "episode": items = [pick("outcome", "Outcome"), pick("episode_return", "Episode return"),
+        pick("episode_steps", "Episode steps"), pick("completed_episodes", "Completed episodes")]; break;
+      case "reset": items = [pick("position", "Start position", "m"), pick("goal", "Goal", "m"), pick("episode_step", "Episode step")]; break;
+      case "transition_end": items = [pick("episode_step", "Episode step"), pick("outcome", "Outcome"),
+        pick("critic_updates", "Critic updates"), pick("actor_updates", "Actor updates")]; break;
+      default: items = Object.keys(v).slice(0, 4).map(key => pick(key, key));
+    }
+    return items.filter(item => item.value !== undefined && item.value !== null);
+  }
 
   function valueText(value) {
     if (value === null || value === undefined) return "—";
@@ -363,7 +569,7 @@
     return fragment;
   }
 
-  function showSource(container, source) {
+  function showSource(container, source, focusText) {
     container.replaceChildren();
     if (!source) {
       container.textContent = "Source excerpt unavailable. Rebuild the HTML from its current sources.";
@@ -375,6 +581,7 @@
     source.lines.forEach((text, index) => {
       const line = document.createElement("span");
       line.className = "trace-code-line";
+      if (focusText && text.includes(focusText)) line.classList.add("is-focus");
       const number = document.createElement("span");
       number.className = "trace-line-number";
       number.setAttribute("aria-hidden", "true");
@@ -428,6 +635,11 @@
       const data = await sendCommand("/api/trace", { command: "start", role,
         controller: elements.controller.value, exploration_noise: Number(noise.value) });
       if (!data) elements["trace-role"].value = lastRole;
+      else {
+        elements["trace-options"].open = false;
+        elements["trace-next"].focus({ preventScroll: true });
+        setText("trace-announcement", `${role === "training" ? "Training" : "Preview"} walkthrough. ${data.trace.stage.title}. Use Next block to continue.`);
+      }
     }
 
     async function autoplay(run) {
@@ -442,20 +654,27 @@
 
     function renderValues(stage) {
       const values = stage.values || {};
-      const fragment = document.createDocumentFragment();
-      for (const [key, value] of Object.entries(values)) {
-        if (["observation", "next_observation", "sonar"].includes(key) || value === null) continue;
-        const row = document.createElement("div");
-        row.className = "trace-watch";
-        if (value && typeof value === "object" && !Array.isArray(value) || Array.isArray(value) && value.length > 4) row.classList.add("wide");
-        const label = document.createElement("dt"), result = document.createElement("dd");
-        label.textContent = key;
-        result.textContent = valueText(value);
-        if (typeof value === "boolean") result.className = value ? "is-true" : "is-false";
-        row.append(label, result);
-        fragment.append(row);
+      function renderList(container, items, raw = false) {
+        const fragment = document.createDocumentFragment();
+        for (const { key, label: name, value, unit = "" } of items) {
+          const row = document.createElement("div");
+          row.className = "trace-watch";
+          row.dataset.key = key;
+          if (raw && (value && typeof value === "object" && !Array.isArray(value) || Array.isArray(value) && value.length > 4)) row.classList.add("wide");
+          const label = document.createElement("dt"), result = document.createElement("dd");
+          label.textContent = name;
+          label.title = key;
+          result.textContent = valueText(value) + (unit ? ` ${unit}` : "");
+          result.title = typeof value === "object" ? JSON.stringify(value) : String(value);
+          if (typeof value === "boolean") result.className = value ? "is-true" : "is-false";
+          row.append(label, result);
+          fragment.append(row);
+        }
+        container.replaceChildren(fragment);
       }
-      elements["trace-values"].replaceChildren(fragment);
+      renderList(elements["trace-values"], keyValues(stage));
+      renderList(elements["trace-raw-values"], Object.entries(values).map(([key, value]) => ({ key, label: key, value })), true);
+      setText("trace-full-explanation", stage.explanation);
       const observation = values.observation;
       const hasObservation = Array.isArray(observation) && observation.length === 21;
       elements["trace-observation-detail"].hidden = !hasObservation;
@@ -485,7 +704,7 @@
         const result = document.createElement("strong"), note = document.createElement("small");
         result.textContent = valueText(values.target);
         equation.append(document.createTextNode(`y = ${valueText(values.reward)} + ${valueText(values.discount)} × ${values.not_done} × min(${valueText(values.target_q1)}, ${valueText(values.target_q2)}) = `), result);
-        note.textContent = `First sampled replay row, index ${values.sample_index}. Values are rounded for display; learning uses their full precision.`;
+        note.textContent = `Replay row ${values.sample_index} · rounded for display`;
         equation.append(note);
       } else if (stage.key === "actor_skip") {
         equation.textContent = `${values.critic_updates} % ${values.policy_delay} ≠ 0 → skip actor and target updates`;
@@ -508,6 +727,7 @@
         elements["simulation-view"].setAttribute("aria-pressed", String(!enabled));
         setText("view-description", enabled ? "One block at a time. The same code that runs the simulation."
           : "Watch the vehicle, then follow the code behind each move.");
+        elements["run-message"].setAttribute("aria-live", enabled ? "off" : "polite");
         redraw();
       }
       if (!enabled) {
@@ -541,33 +761,47 @@
         if (active) item.setAttribute("aria-current", "step"); else item.removeAttribute("aria-current");
       });
       setText("trace-stage-kind", groupNames[group].toUpperCase());
-      setText("trace-sequence", `Step ${trace.transition} · Block ${trace.sequence}`);
+      setText("trace-sequence", `Step ${trace.transition}`);
       setText("trace-stage-title", stage.title);
-      setText("trace-explanation", stage.explanation);
+      setText("trace-explanation", stage.key === "transition_end" && !training
+        ? "This move is complete. Preview leaves weights and replay unchanged."
+        : shortExplanation[stage.key] || stage.explanation);
       setText("trace-boundary", trace.at_boundary ? "Control step complete" : "Block executed");
       setText("trace-tick", trace.at_boundary ? "Next AUV step" : "Finish this step");
-      setText("trace-clock", `Environment step ${data.env?.episode_step ?? 0} · Critic update ${data.training?.updates ?? 0} · Actor update ${data.training?.actor_updates ?? 0}`);
+      setText("trace-clock", training ? `Critic ${data.training?.updates ?? 0} · Actor ${data.training?.actor_updates ?? 0}` : "Preview · weights unchanged");
       setText("trace-values-context", learningSamples.has(stage.key)
-        ? stage.key === "actor_update" ? "Replay minibatch" : "Sampled replay row"
+        ? ["actor_update", "critic"].includes(stage.key) ? "Replay minibatch" : `Replay row ${stage.values.sample_index}`
         : ["soft_targets", "actor_skip", "learning_wait"].includes(stage.key) ? "Learner state" : "Live AUV");
       const outcome = data.env?.outcome;
       const finished = outcome && outcome !== "running";
       setText("trace-motion-note", finished
-        ? `${outcome === "success" ? "Goal reached" : outcome === "collision" ? "Collision" : "Time limit"}. The final position stays visible until the next reset block.`
+        ? `${outcome === "success" ? "Goal reached" : outcome === "collision" ? "Collision" : "Time limit"} · final position held until reset`
         : stage.key === "environment" ? `Moved once: environment step ${data.env.episode_step}, Δt = ${valueText(stage.values.dt)} s.`
-          : stage.key === "reset" ? "New episode. The next movement happens in the environment block."
+          : stage.key === "reset" ? "New episode · waiting for the next move"
             : learningSamples.has(stage.key) || ["soft_targets", "actor_skip", "learning_wait"].includes(stage.key)
-              ? "The sub holds position while the learner processes replay."
-              : "The sub holds position between environment blocks.");
+              ? "Holding position · learning from replay"
+              : "Holding position · waiting for the move block");
       const source = sources[stage.source];
       setText("trace-source-file", source?.file || "Source excerpt unavailable");
       setText("trace-source-range", source ? `L${source.start_line}–${source.end_line}` : "");
       elements["trace-code"].dataset.source = stage.source;
       if (sourceKey !== stage.source) {
         sourceKey = stage.source;
-        showSource(elements["trace-code"], source);
+        showSource(elements["trace-code"], source, focusFor[stage.key]);
         elements["trace-code-scroll"].scrollTop = 0;
         elements["trace-code-scroll"].scrollLeft = 0;
+        // Keep the result-producing statement visible when a completed block is
+        // taller than its pane. This only scrolls source; it executes no code.
+        window.requestAnimationFrame(() => {
+          if (sourceKey !== stage.source) return;
+          const pane = elements["trace-code-scroll"];
+          const focus = elements["trace-code"].querySelector(".is-focus");
+          if (!focus) return;
+          const bounds = pane.getBoundingClientRect(), line = focus.getBoundingClientRect();
+          if (line.bottom > bounds.bottom || line.top < bounds.top) {
+            pane.scrollTop += line.top - bounds.top - Math.max(0, (pane.clientHeight - line.height) / 2);
+          }
+        });
       }
       const detailKey = stage.details_source || detailFor[stage.key];
       const detail = sources[detailKey];
@@ -578,6 +812,7 @@
         showSource(elements["trace-detail-code"], detail);
       }
       renderValues(stage);
+      if (!elements["trace-all-values"].open && !elements["trace-observation-detail"].open) elements["trace-inspector"].scrollTop = 0;
     }
 
     elements["code-view"].addEventListener("click", () => {
@@ -587,7 +822,12 @@
     });
     elements["simulation-view"].addEventListener("click", async () => {
       stopPlaying();
-      await sendCommand("/api/trace", { command: "exit" });
+      elements["trace-options"].open = false;
+      const data = await sendCommand("/api/trace", { command: "exit" });
+      if (data) {
+        elements["code-view"].focus({ preventScroll: true });
+        setText("trace-announcement", "Returned to Simulation. The current control step is complete and the run is paused.");
+      }
     });
     elements["trace-role"].addEventListener("change", startTrace);
     elements["trace-noise"].addEventListener("change", () => {
@@ -604,8 +844,28 @@
       refreshControls();
       timer = window.setTimeout(() => autoplay(run), Number(elements["trace-pace"].value));
     });
-    elements["trace-next"].addEventListener("click", () => sendCommand("/api/trace", { command: "step" }));
-    elements["trace-tick"].addEventListener("click", () => sendCommand("/api/trace", { command: "tick" }));
+    async function manualStep(command, id) {
+      const data = await sendCommand("/api/trace", { command });
+      if (data) {
+        elements[id].focus({ preventScroll: true });
+        setText("trace-announcement", data.trace.stage.title);
+      }
+    }
+    elements["trace-next"].addEventListener("click", () => manualStep("step", "trace-next"));
+    elements["trace-tick"].addEventListener("click", () => manualStep("tick", "trace-tick"));
+    for (const id of ["trace-options", "trace-source-detail", "trace-all-values", "trace-observation-detail"]) {
+      elements[id].addEventListener("toggle", () => { if (elements[id].open) stopPlaying(); });
+    }
+    document.addEventListener("pointerdown", event => {
+      if (!elements["trace-options"].contains(event.target)) elements["trace-options"].open = false;
+    });
+    elements["trace-options"].addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        elements["trace-options"].open = false;
+        elements["trace-options"].querySelector("summary").focus();
+        event.preventDefault();
+      }
+    });
     document.addEventListener("visibilitychange", () => { if (document.hidden) stopPlaying(); });
     window.addEventListener("pagehide", stopPlaying);
 
