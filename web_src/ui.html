@@ -95,20 +95,26 @@
               <p id="trace-explanation">Follow the real values used by the simulation.</p>
             </div>
             <div class="trace-code-region">
-              <div class="trace-source-bar"><span id="trace-source-file">web_src/worker.js</span><span id="trace-source-range"></span></div>
-              <div class="trace-code-scroll" id="trace-code-scroll" tabindex="0" aria-label="Executed source code">
-                <pre class="trace-code" id="trace-code"></pre>
-                <details class="trace-source-detail" id="trace-source-detail" hidden><summary id="trace-source-detail-label">Open the called implementation</summary><div class="trace-detail-location" id="trace-detail-location"></div><div class="trace-detail-scroll" aria-label="Called implementation source"><pre class="trace-code trace-detail-code" id="trace-detail-code"></pre></div></details>
+              <div class="trace-source-tools">
+                <div class="field"><label for="trace-source-view">Code</label><select id="trace-source-view"><option value="python" selected>Python · TD3 reference</option><option value="javascript">JavaScript · browser engine</option></select></div>
+                <a id="trace-source-link" target="_blank" rel="noopener noreferrer">View on GitHub ↗</a>
               </div>
+              <div class="trace-source-caption"><span id="trace-source-origin">Python reference</span><p id="trace-source-note">Read the Python reference alongside live values from the JavaScript browser simulation.</p></div>
+              <div class="trace-source-bar"><span id="trace-source-file">web_src/worker.js</span><span id="trace-source-range"></span></div>
+              <div class="trace-code-scroll" id="trace-code-scroll" tabindex="0" aria-label="Python reference code for this stage">
+                <pre class="trace-code" id="trace-code"></pre>
+                <details class="trace-source-detail" id="trace-source-detail" hidden><summary id="trace-source-detail-label">Open the called implementation</summary><div class="trace-detail-location" id="trace-detail-location"></div><p id="trace-detail-note" class="trace-detail-note" hidden></p><div class="trace-detail-scroll" aria-label="Called implementation source"><pre class="trace-code trace-detail-code" id="trace-detail-code"></pre></div></details>
+              </div>
+              <details id="trace-source-context" class="trace-source-context"><summary id="trace-context-title">How this maps to the simulation</summary><p id="trace-source-mapping"></p><p id="trace-source-precision"></p><details id="trace-license"><summary>TD3 reference license</summary><pre id="trace-source-license"></pre></details></details>
             </div>
             <div id="trace-inspector" class="trace-inspector" tabindex="0" aria-label="Values from the executed block">
-              <div class="trace-values-heading"><h3>Key values</h3><span id="trace-values-context">Live AUV</span></div>
+              <div class="trace-values-heading"><h3 id="trace-values-title">Live browser values</h3><span id="trace-values-context">Live AUV</span></div>
               <dl id="trace-values" class="trace-values"></dl>
               <div id="trace-equation" class="trace-equation" hidden></div>
               <details id="trace-all-values" class="trace-all-values"><summary>All variables</summary><p id="trace-full-explanation"></p><dl id="trace-raw-values" class="trace-values trace-raw-values"></dl></details>
               <details id="trace-observation-detail" class="trace-observation-detail" hidden><summary>Inspect the 21 observation features</summary><p>16 sonar ranges, 2 goal offsets, speed, and 2 current components. All values are normalized.</p><div id="trace-observation-grid" class="trace-observation-grid"></div></details>
             </div>
-            <div class="trace-footer"><span>Highlighted code has just executed.</span><span id="trace-clock">Environment step 0 · Critic update 0</span></div>
+            <div class="trace-footer"><span id="trace-execution-note">Python reference · corresponding browser stage completed.</span><span id="trace-clock">Environment step 0 · Critic update 0</span></div>
           </section>
 
           <section class="panel learning-panel" aria-labelledby="learning-title">

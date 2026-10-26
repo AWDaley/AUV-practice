@@ -1,0 +1,33 @@
+{
+  "repository": "sfujim/TD3",
+  "revision": "34770ccdcb51df6f6c7d85c1ba7e40d71b940d16",
+  "url": "https://github.com/sfujim/TD3",
+  "license": "MIT",
+  "source": "GitHub contents API, pinned commit, base64 decoding with no newline conversion",
+  "files": {
+    "TD3.py": {
+      "sha256": "70bec1b3b9e7c623e732c1f81d95fb30618a550919bfcbaeea31c82d54754df0",
+      "git_blob_sha": "0b953d34412d86b398329afff5d4bb47f18ec5fb",
+      "bytes": 4766,
+      "url": "https://github.com/sfujim/TD3/blob/34770ccdcb51df6f6c7d85c1ba7e40d71b940d16/TD3.py"
+    },
+    "main.py": {
+      "sha256": "507a93012bdd1d83f61947d7ab40074085311aecd918f610bf00fe9cc39c2f24",
+      "git_blob_sha": "a616475c7263aa5ad61093891680b6117b749550",
+      "bytes": 5427,
+      "url": "https://github.com/sfujim/TD3/blob/34770ccdcb51df6f6c7d85c1ba7e40d71b940d16/main.py"
+    },
+    "utils.py": {
+      "sha256": "202d694690980c259e91a4e49259c131e95bed215b2bcf1ba108900d4edc1db0",
+      "git_blob_sha": "bf0f3198ad2b6d4e6dd82e7203f142aa86af700c",
+      "bytes": 1248,
+      "url": "https://github.com/sfujim/TD3/blob/34770ccdcb51df6f6c7d85c1ba7e40d71b940d16/utils.py"
+    },
+    "LICENSE": {
+      "sha256": "5a596c473413553b1fb3e8db602e32524b20166adbbd0f58cbcda60b16e19195",
+      "git_blob_sha": "eec7f732facf8f3ff0753d024250cb8b2f95c467",
+      "bytes": 1071,
+      "url": "https://github.com/sfujim/TD3/blob/34770ccdcb51df6f6c7d85c1ba7e40d71b940d16/LICENSE"
+    }
+  }
+}

@@ -7,9 +7,18 @@ const path = require("node:path");
 const { pathToFileURL } = require("node:url");
 const { chromium } = require(process.env.AUV_PLAYWRIGHT_MODULE || "playwright");
 const root = path.resolve(__dirname, "..");
-const artifacts = path.join(root, "playwright-artifacts", "walkthrough-code-room");
+const artifacts = path.join(root, "playwright-artifacts", "walkthrough-python-reference");
 fs.mkdirSync(artifacts, { recursive: true });
 const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
+const referenceRevision = "34770ccdcb51df6f6c7d85c1ba7e40d71b940d16";
+const referenceFiles = new Map();
+function fileLines(file) {
+  if (!referenceFiles.has(file)) {
+    const relative = /^(TD3|main|utils)\.py$/.test(file) ? `third_party/sfujim_td3/${file}` : file;
+    referenceFiles.set(file, fs.readFileSync(path.join(root, relative), "utf8").split(/\r?\n/));
+  }
+  return referenceFiles.get(file);
+}
 
 (async () => {
   const browser = await chromium.launch({ headless: true, args: ["--no-sandbox"] });
@@ -38,10 +47,10 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
         value.trace.sequence);
       stages.add(value.trace.stage.key);
       assert.equal(await page.locator("#trace-panel").getAttribute("data-stage"), value.trace.stage.key);
-      assert.ok((await page.locator("#trace-code").innerText()).trim().length > 0, "Executed block is empty");
+      assert.ok((await page.locator("#trace-code").innerText()).trim().length > 0, "Source block is empty");
       assert.ok(!(await page.locator("#trace-code").innerText()).includes("Source unavailable"));
-      assert.match(await page.locator("#trace-source-file").innerText(), /^web_src\/(worker|td3|environment)\.js/);
-      sourceBlocks[value.trace.stage.key] = await wholeSourceContained();
+      const language = await verifySourceProvenance();
+      sourceBlocks[`${language}:${value.trace.stage.key}`] = await wholeSourceContained();
       return value;
     }
     async function advance(button = "#trace-next") {
@@ -75,11 +84,68 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
       assert.equal(after.trace.transition, before.trace.transition);
       assert.deepEqual(after.env, before.env);
       assert.deepEqual(after.training, before.training);
+      assert.deepEqual(after.trace, before.trace);
+      assert.deepEqual(after.action, before.action);
+      assert.deepEqual(after.history, before.history);
     }
     async function dashboardVisible(expected) {
       for (const selector of [".learning-panel", ".diagnostics-grid", ".control-column"]) {
         assert.equal(await page.locator(selector).isVisible(), expected, `${selector} visibility`);
       }
+    }
+    async function verifySourceProvenance() {
+      const view = await page.locator("#trace-source-view").inputValue();
+      assert.equal(await page.locator("#trace-panel").getAttribute("data-source-view"), view);
+      assert.equal(await page.locator("#trace-code").getAttribute("data-language"), view);
+      const file = await page.locator("#trace-source-file").innerText();
+      const origin = await page.locator("#trace-source-origin").innerText();
+      const note = await page.locator("#trace-source-note").innerText();
+      assert.equal(await page.locator("#trace-source-note").isVisible(), true);
+      const link = await page.locator("#trace-source-link").getAttribute("href");
+      const range = (await page.locator("#trace-source-range").innerText()).match(/^L(\d+)–(\d+)$/);
+      assert.ok(range, "A displayed excerpt needs source line numbers");
+      const first = Number(range[1]), last = Number(range[2]);
+      const actual = await page.locator("#trace-code > .trace-code-line > .trace-line-text").allTextContents();
+      const normalized = lines => lines.map(line => line.trim().replace(/\t/g, "    "));
+      if (view === "python") {
+        assert.match(file, /^(?:(?:TD3|main|utils)\.py|auv_sim\/[a-z_]+\.py)$/);
+        assert.match(note, /live values.*JavaScript/i);
+        const stage = await page.locator("#trace-panel").getAttribute("data-stage");
+        if (stage === "transition_end") {
+          assert.match(note, /browser pause boundary.*Python.*loop context/i);
+          assert.match(await page.locator("#trace-execution-note").innerText(), /Python loop context.*browser transition complete/i);
+        } else {
+          assert.match(note, /Python is not executing/i);
+          assert.match(await page.locator("#trace-execution-note").innerText(), /Python reference.*browser stage completed/i);
+        }
+        assert.equal(await page.locator("#trace-values-title").innerText(), "Live browser values");
+        if (/^(TD3|main|utils)\.py$/.test(file)) {
+          assert.equal(origin, "sfujim/TD3 · Python reference");
+          assert.equal(link, `https://github.com/sfujim/TD3/blob/${referenceRevision}/${file}#L${first}-L${last}`);
+        } else {
+          assert.equal(origin, "AUV-practice · Python reference");
+          assert.match(link, new RegExp(`^https://github\\.com/AWDaley/AUV-practice/blob/[0-9a-f]{40}/${file.replaceAll(".", "\\.")}#L${first}-L${last}$`));
+        }
+        assert.deepEqual(normalized(actual), normalized(fileLines(file).slice(first - 1, last)),
+          "Python display must quote the identified source lines, not a translated or invented substitute");
+      } else {
+        assert.equal(view, "javascript");
+        assert.match(file, /^web_src\/(worker|td3|environment)\.js$/);
+        assert.equal(origin, "Browser engine · JavaScript");
+        assert.match(note, /JavaScript block has executed/i);
+        assert.equal(await page.locator("#trace-values-title").innerText(), "Key values");
+        assert.match(await page.locator("#trace-execution-note").innerText(), /JavaScript has just executed/i);
+        assert.deepEqual(normalized(actual), normalized(fileLines(file).slice(first - 1, last)));
+      }
+      return view;
+    }
+    async function switchSource(view) {
+      await inspectWithoutStepping(async () => {
+        await page.locator("#trace-source-view").selectOption(view);
+        await page.waitForFunction(language => document.getElementById("trace-code").dataset.language === language, view);
+        assert.equal(await page.locator("#trace-play").getAttribute("aria-pressed"), "false");
+        await rendered();
+      });
     }
     async function sourceReadable(minimumFont) {
       const metrics = await page.locator("#trace-code-scroll").evaluate(element => {
@@ -117,20 +183,22 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
       // Poll after paint to verify its containment without scrolling the pane.
       await page.waitForFunction(expected => {
         const pane = document.getElementById("trace-code-scroll");
-        const statement = document.querySelector("#trace-code .trace-code-line.is-focus");
-        if (!statement || !statement.textContent.includes(expected)) return false;
+        const statement = Array.from(document.querySelectorAll("#trace-code .trace-code-line.is-focus"))
+          .find(line => line.textContent.includes(expected));
+        if (!statement) return false;
         const bounds = pane.getBoundingClientRect(), line = statement.getBoundingClientRect();
         return line.top >= bounds.top - 1 && line.bottom <= bounds.bottom + 1
           && line.left >= bounds.left - 1 && line.right <= bounds.right + 1;
       }, expectedText, { polling: "raf" });
-      return page.evaluate(() => {
+      return page.evaluate(expected => {
         const pane = document.getElementById("trace-code-scroll");
-        const statement = document.querySelector("#trace-code .trace-code-line.is-focus");
+        const statement = Array.from(document.querySelectorAll("#trace-code .trace-code-line.is-focus"))
+          .find(line => line.textContent.includes(expected));
         const bounds = pane.getBoundingClientRect(), line = statement.getBoundingClientRect();
         return { text: statement.querySelector(".trace-line-text").textContent,
           pane_top: bounds.top, pane_bottom: bounds.bottom, line_top: line.top,
           line_bottom: line.bottom, scroll_top: pane.scrollTop };
-      });
+      }, expectedText);
     }
     async function desktopLayout() {
       await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
@@ -233,6 +301,7 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     let value = await rendered();
     assert.equal(value.trace.role, "preview");
     assert.equal(value.trace.stage.key, "observation");
+    assert.equal(await page.locator("#trace-source-view").inputValue(), "python", "Python reference must be the default source view");
     await focusIs("trace-next");
     await dashboardVisible(false);
     assert.equal(await page.locator("#train-button").isEnabled(), false);
@@ -240,6 +309,14 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.equal(await page.locator("#code-view").getAttribute("aria-pressed"), "true");
     assert.equal(await page.locator("#code-view").evaluate(element => getComputedStyle(element).opacity), "1");
     await inspectWithoutStepping(async () => {
+      await setDisclosure("trace-source-context", true);
+      assert.match(await page.locator("#trace-source-precision").innerText(), /not Python local variables/i);
+      assert.ok((await page.locator("#trace-source-mapping").innerText()).length > 30);
+      await setDisclosure("trace-license", true);
+      assert.match(await page.locator("#trace-source-license").innerText(), /MIT License/);
+      assert.match(await page.locator("#trace-source-license").innerText(), /Scott Fujimoto/);
+      await setDisclosure("trace-license", false);
+      await setDisclosure("trace-source-context", false);
       await setDisclosure("trace-source-detail", true);
       assert.equal(await page.locator("#trace-detail-code").isVisible(), true);
       assert.ok((await page.locator("#trace-detail-code").innerText()).includes("observation"));
@@ -251,10 +328,19 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     });
     const stationary = value.env.vehicle;
     await stepTo("actor");
+    assert.equal(await page.locator("#trace-source-file").innerText(), "TD3.py");
+    const actorPython = await page.locator("#trace-code").innerText();
+    assert.match(actorPython, /def select_action/);
+    assert.match(actorPython, /torch\.FloatTensor/);
+    assert.match(actorPython, /self\.actor\(state\)\.cpu\(\)\.data\.numpy\(\)\.flatten\(\)/);
+    assert.ok((await page.locator("#trace-code .trace-token-keyword").allTextContents()).includes("def"), "Python keywords should be highlighted");
+    await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+    await page.screenshot({ path: path.join(artifacts, "desktop-python-actor.png"), fullPage: true });
     assert.deepEqual((await state()).env.vehicle, stationary);
     value = await stepTo("environment");
     assert.notDeepEqual(value.env.vehicle, stationary);
     assert.equal(value.env.episode_step, initial.env.episode_step + 1);
+    await switchSource("javascript");
     await inspectWithoutStepping(async () => {
       layout.expanded_physics = await expandedImplementationFits(51);
       await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
@@ -269,6 +355,7 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
       await page.setViewportSize({ width: 1366, height: 768 });
       await setDisclosure("trace-source-detail", false);
     });
+    await switchSource("python");
     const movementStep = value.env.episode_step;
     value = await advance("#trace-tick");
     assert.equal(value.trace.at_boundary, true);
@@ -293,6 +380,20 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     await pause(420);
     assert.equal((await state()).trace.sequence, held.trace.sequence);
     assert.deepEqual((await state()).env.vehicle, held.env.vehicle);
+
+    await inspectWithoutStepping(async () => {
+      await setDisclosure("trace-options", true);
+      await page.locator("#trace-pace").selectOption("1600");
+      await setDisclosure("trace-options", false);
+    });
+    await page.locator("#trace-play").click();
+    assert.equal(await page.locator("#trace-play").getAttribute("aria-pressed"), "true");
+    await switchSource("javascript");
+    const sourceSwitched = await state();
+    await pause(1700);
+    assert.deepEqual((await state()).trace, sourceSwitched.trace, "Switching source must cancel scheduled autoplay");
+    assert.deepEqual((await state()).env, sourceSwitched.env);
+    await switchSource("python");
 
     await page.locator("#simulation-view").click();
     await until(current => !current.trace.enabled && current.mode === "paused");
@@ -322,7 +423,7 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.match(await page.locator("#trace-values-context").innerText(), /replay|sample|minibatch/i);
     layout.desktop = await desktopLayout();
     await inspectWithoutStepping(async () => {
-      layout.desktop.focused_statement = await focusedStatementVisible("work.target[i] =");
+      layout.desktop.focused_statement = await focusedStatementVisible("target_Q = reward");
     });
     await page.screenshot({ path: path.join(artifacts, "desktop-target.png"), fullPage: true });
     await inspectWithoutStepping(async () => {
@@ -336,12 +437,29 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     assert.equal(await page.locator("#trace-values-context").innerText(), "Replay minibatch",
       "Critic losses and means describe the full minibatch, not only the illustrated replay row");
     assert.deepEqual(value.env.vehicle, learningVehicle);
+    assert.equal(await page.locator("#trace-source-view").inputValue(), "python");
+    assert.equal(await page.locator("#trace-source-file").innerText(), "TD3.py");
+    const criticPython = await page.locator("#trace-code").innerText();
+    assert.match(criticPython, /F\.mse_loss\(current_Q1, target_Q\)/);
+    assert.match(criticPython, /critic_loss\.backward\(\)/);
+    assert.match(criticPython, /self\.critic_optimizer\.step\(\)/);
     await inspectWithoutStepping(async () => {
-      layout.desktop_critic = await wholeBlockInViewport(22);
-      await page.screenshot({ path: path.join(artifacts, "desktop-critic-viewport.png") });
-      await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
-      await page.screenshot({ path: path.join(artifacts, "desktop-critic-full.png"), fullPage: true });
+      const lines = await page.locator("#trace-code > .trace-code-line").count();
+      assert.ok(lines >= 5 && lines < 22, "The original Python critic excerpt should keep its own line count");
+      layout.python_critic = await wholeBlockInViewport(lines);
+      await page.screenshot({ path: path.join(artifacts, "desktop-python-critic.png") });
     });
+    await switchSource("javascript");
+    assert.match(await page.locator("#trace-code").innerText(), /this\.q1\.backward/);
+    assert.ok(!(await page.locator("#trace-code").innerText()).includes("critic_loss.backward()"));
+    await inspectWithoutStepping(async () => {
+      layout.javascript_critic = await wholeBlockInViewport(22);
+      await page.screenshot({ path: path.join(artifacts, "desktop-javascript-critic.png") });
+      await page.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
+      await page.screenshot({ path: path.join(artifacts, "desktop-javascript-critic-full.png"), fullPage: true });
+    });
+    await switchSource("python");
+    assert.equal(await page.locator("#trace-code").innerText(), criticPython);
     value = await stepTo("actor_skip");
     assert.equal(value.training.updates, 48877);
     value = await advance("#trace-tick");
@@ -362,7 +480,7 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
     layout.mobile = { ...mobile, code: await sourceReadable(13), active_source: await wholeSourceContained() };
     await inspectWithoutStepping(async () => {
       layout.mobile.source = await mobileContentReachable("#trace-code .trace-code-line:first-child");
-      await page.screenshot({ path: path.join(artifacts, "mobile-source-viewport.png") });
+      await page.screenshot({ path: path.join(artifacts, "mobile-python-source-viewport.png") });
       layout.mobile.values = await mobileContentReachable("#trace-values");
       await page.screenshot({ path: path.join(artifacts, "mobile-values-viewport.png") });
       await setDisclosure("trace-source-detail", true);
@@ -397,6 +515,11 @@ const pause = ms => new Promise(resolve => setTimeout(resolve, ms));
       dashboard_hidden_only_during_walkthrough: true, source_wraps_without_horizontal_scroll: true,
       raw_variables_accessible: true, bellman_assignment_visible_without_manual_scroll: true,
       complete_active_blocks_without_internal_scrolling: true, expanded_implementation_uses_page_scrolling: true,
+      default_source_view: "python", python_reference_revision: referenceRevision,
+      original_python_excerpts_match_vendored_source: true, upstream_source_links_are_pinned: true,
+      python_reference_and_javascript_execution_clearly_distinguished: true,
+      switching_source_view_preserves_live_state: true, source_switch_pauses_autoplay: true,
+      actual_javascript_source_remains_available: true,
       source_blocks: sourceBlocks, layout,
     };
     fs.writeFileSync(path.join(artifacts, "validation.json"), JSON.stringify(report, null, 2) + "\n");

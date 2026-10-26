@@ -5,8 +5,24 @@ Gradient (TD3), introduced by Scott Fujimoto, Herke van Hoof, and David Meger
 in "Addressing Function Approximation Error in Actor-Critic Methods" (2018).
 
 Algorithmic references include https://github.com/sfujim/TD3 and OpenAI
-Spinning Up's TD3 documentation. The software in this repository was written
-for this project rather than copied as a fork of those implementations.
+Spinning Up's TD3 documentation. The AUV simulation and browser learner were
+implemented for this project.
+
+The repository also includes unmodified reference files TD3.py, main.py,
+utils.py, and LICENSE from sfujim/TD3 at revision:
+34770ccdcb51df6f6c7d85c1ba7e40d71b940d16
+https://github.com/sfujim/TD3/tree/34770ccdcb51df6f6c7d85c1ba7e40d71b940d16
+
+Copyright (c) 2020 Scott Fujimoto
+These third-party files are supplied under the MIT License. The complete
+license is retained at third_party/sfujim_td3/LICENSE, with file provenance
+and checksums at third_party/sfujim_td3/provenance.json. The offline HTML
+includes the license with its bundled reference excerpts.
+
+The walkthrough maps original Python reference excerpts to live JavaScript
+execution stages. The HTML does not execute the displayed Python. This
+project's AUV-specific Python excerpts are identified separately from the
+sfujim/TD3 source.
 
 The AUV papers linked in README.md motivate the learning project. This code
 does not claim to reproduce their author implementations or reported results.

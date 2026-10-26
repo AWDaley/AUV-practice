@@ -1,0 +1,2 @@
+# Preserve upstream bytes, including utils.py's CRLF line endings.
+* -text

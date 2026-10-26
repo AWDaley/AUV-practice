@@ -31,7 +31,7 @@
   "mobile": {
     "width": 390,
     "document": 390,
-    "height": 1302
+    "height": 1625
   },
   "disclosures_preserve_execution": true,
   "focus_restored_on_mode_change": true,
@@ -41,80 +41,104 @@
   "bellman_assignment_visible_without_manual_scroll": true,
   "complete_active_blocks_without_internal_scrolling": true,
   "expanded_implementation_uses_page_scrolling": true,
+  "default_source_view": "python",
+  "python_reference_revision": "34770ccdcb51df6f6c7d85c1ba7e40d71b940d16",
+  "original_python_excerpts_match_vendored_source": true,
+  "upstream_source_links_are_pinned": true,
+  "python_reference_and_javascript_execution_clearly_distinguished": true,
+  "switching_source_view_preserves_live_state": true,
+  "source_switch_pauses_autoplay": true,
+  "actual_javascript_source_remains_available": true,
   "source_blocks": {
-    "observation": {
+    "python:observation": {
       "logical_lines": 1,
       "fully_contained_lines": 1,
-      "pane_height": 288,
-      "scroll_height": 288,
+      "pane_height": 134,
+      "scroll_height": 134,
       "scroll_top": 0,
       "overflow_y": "visible"
     },
-    "actor": {
+    "python:actor": {
+      "logical_lines": 3,
+      "fully_contained_lines": 3,
+      "pane_height": 134,
+      "scroll_height": 134,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "python:environment": {
+      "logical_lines": 1,
+      "fully_contained_lines": 1,
+      "pane_height": 134,
+      "scroll_height": 134,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "javascript:environment": {
+      "logical_lines": 3,
+      "fully_contained_lines": 3,
+      "pane_height": 134,
+      "scroll_height": 134,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "python:transition_end": {
+      "logical_lines": 7,
+      "fully_contained_lines": 7,
+      "pane_height": 188,
+      "scroll_height": 188,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "python:exploration": {
+      "logical_lines": 4,
+      "fully_contained_lines": 4,
+      "pane_height": 134,
+      "scroll_height": 134,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "python:replay_add": {
+      "logical_lines": 9,
+      "fully_contained_lines": 9,
+      "pane_height": 270,
+      "scroll_height": 270,
+      "scroll_top": 0,
+      "overflow_y": "visible"
+    },
+    "python:replay_sample": {
       "logical_lines": 2,
       "fully_contained_lines": 2,
-      "pane_height": 288,
-      "scroll_height": 288,
+      "pane_height": 134,
+      "scroll_height": 134,
       "scroll_top": 0,
       "overflow_y": "visible"
     },
-    "environment": {
-      "logical_lines": 3,
-      "fully_contained_lines": 3,
-      "pane_height": 288,
-      "scroll_height": 288,
+    "python:target_actions": {
+      "logical_lines": 9,
+      "fully_contained_lines": 9,
+      "pane_height": 234,
+      "scroll_height": 234,
       "scroll_top": 0,
       "overflow_y": "visible"
     },
-    "transition_end": {
-      "logical_lines": 3,
-      "fully_contained_lines": 3,
-      "pane_height": 288,
-      "scroll_height": 288,
+    "python:bellman_target": {
+      "logical_lines": 4,
+      "fully_contained_lines": 4,
+      "pane_height": 134,
+      "scroll_height": 134,
       "scroll_top": 0,
       "overflow_y": "visible"
     },
-    "exploration": {
-      "logical_lines": 5,
-      "fully_contained_lines": 5,
-      "pane_height": 288,
-      "scroll_height": 288,
+    "python:critic": {
+      "logical_lines": 10,
+      "fully_contained_lines": 10,
+      "pane_height": 293,
+      "scroll_height": 293,
       "scroll_top": 0,
       "overflow_y": "visible"
     },
-    "replay_add": {
-      "logical_lines": 3,
-      "fully_contained_lines": 3,
-      "pane_height": 288,
-      "scroll_height": 288,
-      "scroll_top": 0,
-      "overflow_y": "visible"
-    },
-    "replay_sample": {
-      "logical_lines": 3,
-      "fully_contained_lines": 3,
-      "pane_height": 288,
-      "scroll_height": 288,
-      "scroll_top": 0,
-      "overflow_y": "visible"
-    },
-    "target_actions": {
-      "logical_lines": 14,
-      "fully_contained_lines": 14,
-      "pane_height": 349,
-      "scroll_height": 349,
-      "scroll_top": 0,
-      "overflow_y": "visible"
-    },
-    "bellman_target": {
-      "logical_lines": 8,
-      "fully_contained_lines": 8,
-      "pane_height": 288,
-      "scroll_height": 288,
-      "scroll_top": 0,
-      "overflow_y": "visible"
-    },
-    "critic": {
+    "javascript:critic": {
       "logical_lines": 22,
       "fully_contained_lines": 22,
       "pane_height": 534,
@@ -122,27 +146,27 @@
       "scroll_top": 0,
       "overflow_y": "visible"
     },
-    "actor_skip": {
-      "logical_lines": 1,
-      "fully_contained_lines": 1,
-      "pane_height": 288,
-      "scroll_height": 288,
+    "python:actor_skip": {
+      "logical_lines": 2,
+      "fully_contained_lines": 2,
+      "pane_height": 134,
+      "scroll_height": 134,
       "scroll_top": 0,
       "overflow_y": "visible"
     },
-    "actor_update": {
-      "logical_lines": 17,
-      "fully_contained_lines": 17,
-      "pane_height": 465,
-      "scroll_height": 465,
+    "python:actor_update": {
+      "logical_lines": 7,
+      "fully_contained_lines": 7,
+      "pane_height": 188,
+      "scroll_height": 188,
       "scroll_top": 0,
       "overflow_y": "visible"
     },
-    "soft_targets": {
-      "logical_lines": 3,
-      "fully_contained_lines": 3,
-      "pane_height": 288,
-      "scroll_height": 288,
+    "python:soft_targets": {
+      "logical_lines": 6,
+      "fully_contained_lines": 6,
+      "pane_height": 201,
+      "scroll_height": 201,
       "scroll_top": 0,
       "overflow_y": "visible"
     }
@@ -155,7 +179,7 @@
       "scroll_height": 1296,
       "pane_height": 1450,
       "pane_scroll_height": 1450,
-      "document_height": 1965
+      "document_height": 2119
     },
     "mobile_expanded_physics": {
       "logical_lines": 51,
@@ -164,7 +188,7 @@
       "scroll_height": 2257,
       "pane_height": 2451,
       "pane_scroll_height": 2451,
-      "document_height": 3481,
+      "document_height": 3648,
       "code": {
         "font_size": 13,
         "white_space": "pre-wrap",
@@ -204,11 +228,11 @@
       },
       "source": {
         "x": 468.390625,
-        "y": 345.234375,
+        "y": 462.734375,
         "right": 1325,
-        "bottom": 632.734375,
+        "bottom": 596.6875,
         "width": 856.609375,
-        "height": 287.5
+        "height": 133.953125
       },
       "values": {
         "x": 468.390625,
@@ -226,30 +250,42 @@
         "scroll_width": 857
       },
       "focused_statement": {
-        "text": "  work.target[i] = batch.rewards[i] + this.config.discount * batch.not_done[i] * Math.min(next1[i], next2[i]);",
-        "pane_top": 345.234375,
-        "pane_bottom": 632.734375,
-        "line_top": 495.796875,
-        "line_bottom": 541.984375,
+        "text": "target_Q = reward + not_done * self.discount * target_Q",
+        "pane_top": 462.734375,
+        "pane_bottom": 596.6875,
+        "line_top": 544.015625,
+        "line_bottom": 567.109375,
         "scroll_top": 0
       }
     },
-    "desktop_critic": {
+    "python_critic": {
+      "logical_lines": 10,
+      "fully_visible_lines": 10,
+      "pane_top": 278.734375,
+      "pane_bottom": 571.71875,
+      "pane_height": 292.984375,
+      "toolbar_top": 0,
+      "toolbar_bottom": 66,
+      "viewport_height": 768,
+      "page_scroll": 184,
+      "pane_scroll": 0
+    },
+    "javascript_critic": {
       "logical_lines": 22,
       "fully_visible_lines": 22,
-      "pane_top": 158.234375,
-      "pane_bottom": 692.296875,
+      "pane_top": 158.734375,
+      "pane_bottom": 692.796875,
       "pane_height": 534.0625,
       "toolbar_top": 0,
       "toolbar_bottom": 66,
       "viewport_height": 768,
-      "page_scroll": 187,
+      "page_scroll": 304,
       "pane_scroll": 0
     },
     "mobile": {
       "width": 390,
       "document": 390,
-      "height": 1302,
+      "height": 1625,
       "code": {
         "font_size": 13,
         "white_space": "pre-wrap",
@@ -257,10 +293,10 @@
         "scroll_width": 364
       },
       "active_source": {
-        "logical_lines": 3,
-        "fully_contained_lines": 3,
-        "pane_height": 229,
-        "scroll_height": 229,
+        "logical_lines": 6,
+        "fully_contained_lines": 6,
+        "pane_height": 371,
+        "scroll_height": 371,
         "scroll_top": 0,
         "overflow_y": "visible"
       },
@@ -275,11 +311,11 @@
           "width": 366
         },
         "content": {
-          "top": 400.78125,
-          "bottom": 444.96875,
+          "top": 411.78125,
+          "bottom": 433.875,
           "left": 13,
           "right": 377,
-          "height": 44.1875,
+          "height": 22.09375,
           "width": 364
         },
         "buttons": [
@@ -323,8 +359,8 @@
           "width": 366
         },
         "content": {
-          "top": 618.28125,
-          "bottom": 721.28125,
+          "top": 604.6875,
+          "bottom": 707.6875,
           "left": 13,
           "right": 377,
           "height": 103,
@@ -363,13 +399,42 @@
     }
   },
   "artifact": "auv-practice.html",
-  "artifact_sha256": "5b9347e1bef48d200f309e42f8606f831812de9326acc51397a80746992d23db",
-  "artifact_size_bytes": 1507208,
+  "artifact_sha256": "b736dc570409553e08f3a912c796d543941b699b3880ba91d24ee880f22006cd",
+  "artifact_size_bytes": 1546951,
   "trace_integration_tests": {
     "passed": 14,
     "failed": 0,
-    "duration_ms": 2525,
-    "artifact_sha256": "5b9347e1bef48d200f309e42f8606f831812de9326acc51397a80746992d23db"
+    "artifact_sha256": "b736dc570409553e08f3a912c796d543941b699b3880ba91d24ee880f22006cd"
+  },
+  "python_reference_provenance_tests": {
+    "passed": 7,
+    "failed": 0,
+    "artifact_sha256": "b736dc570409553e08f3a912c796d543941b699b3880ba91d24ee880f22006cd",
+    "coverage": [
+      "Vendored upstream files match pinned Git blob IDs and SHA-256 checksums byte for byte",
+      "Each embedded excerpt is an exact source slice with pinned line links",
+      "Original TD3 and separate AUV source origins are correct",
+      "Every executable walkthrough source key has a Python reference mapping",
+      "Changed source bytes or wrong provenance revisions are rejected"
+    ]
+  },
+  "python_source_provenance": {
+    "upstream_repository": "sfujim/TD3",
+    "upstream_revision": "34770ccdcb51df6f6c7d85c1ba7e40d71b940d16",
+    "upstream_license": "MIT",
+    "upstream_copyright": "Copyright (c) 2020 Scott Fujimoto",
+    "upstream_files": [
+      "TD3.py",
+      "main.py",
+      "utils.py",
+      "LICENSE"
+    ],
+    "auv_repository": "AWDaley/AUV-practice",
+    "auv_revision": "75b7b262641b097c8056b2005235910ffafa4af4",
+    "auv_files": [
+      "auv_sim/environment.py",
+      "auv_sim/experiment.py"
+    ]
   },
   "normal_browser_regression": {
     "passed": true,
@@ -394,45 +459,11 @@
       "width": 390,
       "document": 390
     },
-    "validation_scope": "Previous ordinary-browser regression, before this presentation-only revision; not rerun for the current artifact.",
+    "validation_scope": "Previous ordinary-browser regression for the explicitly identified bb85afec artifact; not rerun for this Python-reference interface revision.",
     "artifact_sha256": "bb85afec21c6b9cc010af63a1443d1c905e06b6fc1362154422c1d798fc7869d",
     "artifact_size_bytes": 1507957
   },
-  "source_semantics": "Highlighted snippets are extracted from executable JavaScript at build time. Each stage is shown after execution. Preview and training use the same transition and learner generators as ordinary execution.",
+  "source_semantics": "The default Python view displays exact pinned sfujim/TD3 reference excerpts mapped to browser execution stages; AUV-specific references come from separately identified AUV Practice Python source. The HTML executes JavaScript, not the displayed Python or PyTorch. Displayed values are captured from the live JavaScript stage after execution and keep their browser field names. The optional JavaScript view shows the executing source extracted at build time. Switching source views pauses autoplay and preserves live simulation and learner state. Preview and training retain the same transition and learner generators as ordinary browser execution.",
   "critic_minibatch_label_verified": true,
-  "critic_summary_context": "Replay minibatch",
-  "layout_comparison": {
-    "measurement_note": "Same 22-line critic block at a 1366 by 768 desktop viewport. Baseline is the preceding compact layout with an internally scrolled source pane. Revised capture positions the page to show the complete block; the source pane itself does not scroll. Longer implementation details extend down the page and are not claimed to fit in one viewport.",
-    "baseline": {
-      "artifact_sha256": "bb85afec21c6b9cc010af63a1443d1c905e06b6fc1362154422c1d798fc7869d",
-      "stage": "critic",
-      "viewport": {
-        "width": 1366,
-        "height": 768
-      },
-      "logical_lines": 22,
-      "fully_visible_lines": 8,
-      "pane_height": 202.75,
-      "pane_client_height": 203,
-      "pane_scroll_height": 494,
-      "pane_scroll_top": 291,
-      "code_font_px": 13.0
-    },
-    "revised": {
-      "artifact_sha256": "5b9347e1bef48d200f309e42f8606f831812de9326acc51397a80746992d23db",
-      "stage": "critic",
-      "viewport": {
-        "width": 1366,
-        "height": 768
-      },
-      "logical_lines": 22,
-      "fully_visible_lines": 22,
-      "pane_height": 534.0625,
-      "pane_client_height": 534,
-      "pane_scroll_height": 534,
-      "pane_scroll_top": 0,
-      "page_scroll_top": 187,
-      "code_font_px": 14
-    }
-  }
+  "critic_summary_context": "Replay minibatch"
 }

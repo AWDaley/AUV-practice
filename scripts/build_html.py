@@ -15,6 +15,11 @@ from pathlib import Path
 import numpy as np
 import torch
 
+try:
+    from .python_trace_sources import python_trace_bundle
+except ImportError:  # Direct invocation: python scripts/build_html.py
+    from python_trace_sources import python_trace_bundle
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -49,6 +54,11 @@ def trace_sources() -> dict:
     if not blocks:
         raise ValueError("The walkthrough needs source markers in the executable code")
     return blocks
+
+
+def python_trace_sources() -> dict:
+    """Reference Python follows the same stage keys, with explicit provenance."""
+    return python_trace_bundle(ROOT, expected_keys=trace_sources())
 
 
 def encode(tensors) -> str:
@@ -155,6 +165,7 @@ def main() -> None:
     scripts = (f'<script id="auv-worker-source" type="application/json">{safe_json(worker)}</script>\n'
                f'<script id="auv-demo-model" type="application/json">{safe_json(demo)}</script>\n'
                f'<script id="auv-trace-source" type="application/json">{safe_json(trace_sources())}</script>\n'
+               f'<script id="auv-python-trace-source" type="application/json">{safe_json(python_trace_sources())}</script>\n'
                f'<script>\n{bridge}\n</script>\n<script>\n{trace_ui}\n</script>\n<script>\n{ui}\n</script>')
     if template.count("<!-- INLINE_STYLES -->") != 1 or template.count("<!-- INLINE_SCRIPTS -->") != 1:
         raise ValueError("Template must contain exactly one styles and scripts placeholder")

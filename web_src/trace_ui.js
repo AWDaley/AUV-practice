@@ -1,4 +1,4 @@
-/* A serial, block-by-block view of the worker's actual execution. */
+/* Live browser stages connected to the original Python reference or executing JavaScript. */
 (() => {
   "use strict";
 
@@ -16,7 +16,12 @@
   const detailTitles = { observation_features: "See how the 21 features are calculated",
     network_forward: "See the actor's matrix operations and activations",
     physics: "See motion, collision checks, and the reward calculation",
-    soft_update: "See the target-weight interpolation" };
+    soft_update: "See the target-weight interpolation",
+    replay_sampling: "See how the Python replay buffer samples a batch",
+    replay_storage: "See how the Python replay buffer stores a transition",
+    critic_forward: "See the two Python critic networks" };
+  const pythonDetailFor = { ...detailFor, replay_sample: "replay_sampling", replay_add: "replay_storage",
+    critic: "critic_forward" };
   const focusFor = { bellman_target: "work.target[i] =", critic: "this.optimizers.q1.step",
     actor_update: "this.optimizers.actor.step", target_actions: "output[i] = clamp" };
   const learningSamples = new Set(["replay_sample", "target_actions", "bellman_target", "critic", "actor_update"]);
@@ -105,15 +110,17 @@
     return String(value);
   }
 
-  function highlightedLine(text) {
+  function highlightedLine(text, language) {
     const fragment = document.createDocumentFragment();
     // Token styling only. Source text is never interpreted as HTML or executed.
-    const token = /(\/\/.*$|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|\b(?:const|let|return|if|else|for|while|this|new|throw|true|false|null|typeof|yield)\b|\b\d+(?:\.\d+)?(?:e[+-]?\d+)?\b)/g;
+    const token = language === "python"
+      ? /(#.*$|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|\b(?:def|class|return|if|elif|else|for|while|in|with|as|import|from|not|and|or|is|None|True|False|self|raise|try|except|finally|pass|yield|break|continue)\b|\b\d+(?:\.\d+)?(?:e[+-]?\d+)?\b)/g
+      : /(\/\/.*$|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|`(?:\\.|[^`\\])*`|\b(?:const|let|return|if|else|for|while|this|new|throw|true|false|null|typeof|yield)\b|\b\d+(?:\.\d+)?(?:e[+-]?\d+)?\b)/g;
     let from = 0, match;
     while ((match = token.exec(text)) !== null) {
       fragment.append(document.createTextNode(text.slice(from, match.index)));
       const span = document.createElement("span");
-      span.className = "trace-token-" + (match[0].startsWith("//") ? "comment"
+      span.className = "trace-token-" + (match[0].startsWith(language === "python" ? "#" : "//") ? "comment"
         : /^["'`]/.test(match[0]) ? "string" : /^\d/.test(match[0]) ? "number" : "keyword");
       span.textContent = match[0];
       fragment.append(span);
@@ -125,6 +132,7 @@
 
   function showSource(container, source, focusText) {
     container.replaceChildren();
+    container.dataset.language = source?.language || "javascript";
     if (!source) {
       container.textContent = "Source excerpt unavailable. Rebuild the HTML from its current sources.";
       return;
@@ -135,14 +143,14 @@
     source.lines.forEach((text, index) => {
       const line = document.createElement("span");
       line.className = "trace-code-line";
-      if (focusText && text.includes(focusText)) line.classList.add("is-focus");
+      if (source.focus?.includes(source.start_line + index) || focusText && text.includes(focusText)) line.classList.add("is-focus");
       const number = document.createElement("span");
       number.className = "trace-line-number";
       number.setAttribute("aria-hidden", "true");
       number.textContent = String(source.start_line + index);
       const code = document.createElement("span");
       code.className = "trace-line-text";
-      code.append(highlightedLine(text.slice(indent)));
+      code.append(highlightedLine(text.slice(indent), source.language || "javascript"));
       line.append(number, code);
       fragment.append(line);
     });
@@ -151,6 +159,8 @@
 
   window.createAUVTraceView = ({ elements, getState, sendCommand, setText, redraw, refreshControls, isLocked }) => {
     const sources = JSON.parse(document.getElementById("auv-trace-source").textContent);
+    const pythonReference = JSON.parse(document.getElementById("auv-python-trace-source").textContent);
+    let sourceView = "python";
     let playing = false;
     let timer = null;
     let generation = 0;
@@ -176,6 +186,7 @@
       elements["trace-tick"].disabled = locked || !enabled || playing;
       elements["trace-role"].disabled = locked || playing;
       elements["trace-noise"].disabled = locked || playing;
+      elements["trace-source-view"].disabled = locked || !enabled;
       setText("trace-play-label", playing ? "Pause blocks" : "Play blocks");
       elements["trace-play"].setAttribute("aria-pressed", String(playing));
       elements["trace-play"].querySelector("path").setAttribute("d", playing ? "M5 4h3v12H5zm7 0h3v12h-3z" : "m6 3 11 7-11 7z");
@@ -279,7 +290,7 @@
         elements["simulation-view"].classList.toggle("is-selected", !enabled);
         elements["code-view"].setAttribute("aria-pressed", String(enabled));
         elements["simulation-view"].setAttribute("aria-pressed", String(!enabled));
-        setText("view-description", enabled ? "One block at a time. The same code that runs the simulation."
+        setText("view-description", enabled ? "Connect Python TD3 source to the live simulation, one stage at a time."
           : "Watch the vehicle, then follow the code behind each move.");
         elements["run-message"].setAttribute("aria-live", enabled ? "off" : "polite");
         redraw();
@@ -299,11 +310,12 @@
       setText("active-controller", `${data.controller === "td3" ? "TD3 policy" : data.controller === "baseline" ? "Map-aware baseline" : "Random actions"} · ${training ? "training" : "preview"} walkthrough`);
       const stage = trace.stage;
       if (!stage) return;
-      const nextSignature = `${trace.sequence}:${trace.transition}:${stage.key}:${trace.role}`;
+      const nextSignature = `${trace.sequence}:${trace.transition}:${stage.key}:${trace.role}:${sourceView}`;
       if (nextSignature === signature) return;
       signature = nextSignature;
       elements["trace-panel"].dataset.stage = stage.key;
       elements["trace-panel"].dataset.sequence = String(trace.sequence);
+      elements["trace-panel"].dataset.sourceView = sourceView;
       elements.simulation.dataset.traceStage = stage.key;
       const group = groupFor[stage.key] || "finish";
       const groupIndex = Object.keys(groupNames).indexOf(group);
@@ -320,7 +332,7 @@
       setText("trace-explanation", stage.key === "transition_end" && !training
         ? "This move is complete. Preview leaves weights and replay unchanged."
         : shortExplanation[stage.key] || stage.explanation);
-      setText("trace-boundary", trace.at_boundary ? "Control step complete" : "Block executed");
+      setText("trace-boundary", trace.at_boundary ? "Control step complete" : "Browser stage completed");
       setText("trace-tick", trace.at_boundary ? "Next AUV step" : "Finish this step");
       setText("trace-clock", training ? `Critic ${data.training?.updates ?? 0} · Actor ${data.training?.actor_updates ?? 0}` : "Preview · weights unchanged");
       setText("trace-values-context", learningSamples.has(stage.key)
@@ -335,20 +347,55 @@
             : learningSamples.has(stage.key) || ["soft_targets", "actor_skip", "learning_wait"].includes(stage.key)
               ? "Holding position · learning from replay"
               : "Holding position · waiting for the move block");
-      const source = sources[stage.source];
+      const python = sourceView === "python";
+      const sourceSet = python ? pythonReference.sources : sources;
+      const mappedKey = python && stage.key === "random" && stage.values.random_warmup ? "random_warmup" : stage.source;
+      const source = sourceSet[mappedKey];
+      const upstream = python && source?.origin === "td3-reference";
+      const contextOnly = python && source?.kind === "context";
       setText("trace-source-file", source?.file || "Source excerpt unavailable");
       setText("trace-source-range", source ? `L${source.start_line}–${source.end_line}` : "");
-      elements["trace-code"].dataset.source = stage.source;
-      if (sourceKey !== stage.source) {
-        sourceKey = stage.source;
-        showSource(elements["trace-code"], source, focusFor[stage.key]);
+      setText("trace-source-origin", python
+        ? upstream ? `${pythonReference.repository} · Python reference` : "AUV-practice · Python reference"
+        : "Browser engine · JavaScript");
+      setText("trace-source-note", python
+        ? contextOnly ? "Browser pause boundary; the Python shown is loop context. Live values come from the JavaScript simulation."
+          : "Python reference for this stage. Live values come from the JavaScript browser simulation; Python is not executing here."
+        : "This JavaScript block has executed in the browser. The live values below are captured from that execution.");
+      setText("trace-values-title", python ? "Live browser values" : "Key values");
+      setText("trace-execution-note", python
+        ? contextOnly ? "Python loop context · browser transition complete." : "Python reference · corresponding browser stage completed."
+        : "Highlighted JavaScript has just executed.");
+      elements["trace-code-scroll"].setAttribute("aria-label", python ? "Python reference code for this stage" : "Executed JavaScript source code");
+      elements["trace-inspector"].setAttribute("aria-label", python ? "Live browser values for the corresponding algorithm stage" : "Values from the executed JavaScript block");
+      setText("trace-context-title", python ? "How this maps to the simulation" : "About this source");
+      setText("trace-source-mapping", python ? source?.note || "This Python excerpt illustrates the corresponding browser stage."
+        : "The highlighted source is extracted directly from the JavaScript files bundled in this HTML. Each stage is displayed after it runs.");
+      setText("trace-source-precision", python
+        ? "The original TD3 repository uses different model sizes, defaults, and random streams. These readings are browser measurements, not Python local variables or a reproduced Python run. All variables keeps the browser's diagnostic names."
+        : "The Python source view connects these stages to the original TD3 reference. It does not change which code the browser runs.");
+      elements["trace-license"].hidden = !python;
+      setText("trace-source-license", pythonReference.license);
+      const baseUrl = source?.url || (source && !python
+        ? `https://github.com/AWDaley/AUV-practice/blob/75b7b262641b097c8056b2005235910ffafa4af4/${source.file}` : "");
+      const sourceLink = elements["trace-source-link"];
+      sourceLink.hidden = !baseUrl;
+      if (baseUrl) sourceLink.href = `${baseUrl.split("#")[0]}#L${source.start_line}-L${source.end_line}`;
+      else sourceLink.removeAttribute("href");
+      elements["trace-code"].dataset.source = mappedKey;
+      const nextSourceKey = `${sourceView}:${mappedKey}`;
+      if (sourceKey !== nextSourceKey) {
+        sourceKey = nextSourceKey;
+        showSource(elements["trace-code"], source, python ? null : focusFor[stage.key]);
       }
-      const detailKey = stage.details_source || detailFor[stage.key];
-      const detail = sources[detailKey];
+      const detailKey = python ? pythonDetailFor[stage.key] : stage.details_source || detailFor[stage.key];
+      const detail = sourceSet[detailKey];
       elements["trace-source-detail"].hidden = !detail;
       if (detail) {
         setText("trace-source-detail-label", detailTitles[detailKey] || "Open the called implementation");
         setText("trace-detail-location", `${detail.file} · L${detail.start_line}–${detail.end_line}`);
+        elements["trace-detail-note"].hidden = !python || !detail.note;
+        setText("trace-detail-note", python ? detail.note || "" : "");
         showSource(elements["trace-detail-code"], detail);
       }
       renderValues(stage);
@@ -369,6 +416,14 @@
       }
     });
     elements["trace-role"].addEventListener("change", startTrace);
+    elements["trace-source-view"].addEventListener("change", () => {
+      stopPlaying();
+      sourceView = elements["trace-source-view"].value;
+      renderState(getState());
+      setText("trace-announcement", sourceView === "python"
+        ? "Showing corresponding Python reference code. Live values still come from the browser simulation."
+        : "Showing the JavaScript executed by the browser.");
+    });
     elements["trace-noise"].addEventListener("change", () => {
       if (!elements["trace-noise"].checkValidity()) { elements["trace-noise"].reportValidity(); return; }
       elements["exploration-noise"].value = elements["trace-noise"].value;
@@ -392,7 +447,7 @@
     }
     elements["trace-next"].addEventListener("click", () => manualStep("step", "trace-next"));
     elements["trace-tick"].addEventListener("click", () => manualStep("tick", "trace-tick"));
-    for (const id of ["trace-options", "trace-source-detail", "trace-all-values", "trace-observation-detail"]) {
+    for (const id of ["trace-options", "trace-source-detail", "trace-source-context", "trace-license", "trace-all-values", "trace-observation-detail"]) {
       elements[id].addEventListener("toggle", () => { if (elements[id].open) stopPlaying(); });
     }
     document.addEventListener("pointerdown", event => {
