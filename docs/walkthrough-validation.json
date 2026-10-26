@@ -1,0 +1,52 @@
+{
+  "browser": "134.0.6998.35",
+  "protocol": "file://",
+  "offline": true,
+  "network_requests": 0,
+  "page_errors": 0,
+  "preview_does_not_train": true,
+  "environment_moves_only_at_environment_block": true,
+  "next_auv_step_advances_exactly_one_transition": true,
+  "autoplay_pause_preserves_stage": true,
+  "real_replay_target_visible": true,
+  "delayed_actor_and_soft_targets_visible": true,
+  "training_steps": 50036,
+  "critic_updates": 48878,
+  "actor_updates": 24439,
+  "observed_stages": [
+    "observation",
+    "actor",
+    "environment",
+    "transition_end",
+    "exploration",
+    "replay_add",
+    "replay_sample",
+    "target_actions",
+    "bellman_target",
+    "critic",
+    "actor_skip",
+    "actor_update",
+    "soft_targets"
+  ],
+  "mobile": {
+    "width": 390,
+    "document": 390
+  },
+  "artifact": "auv-practice.html",
+  "artifact_sha256": "5c9d84a477d2a481175c0c6956c3a0252090d214277033e834aaf19c141c0520",
+  "trace_integration_tests": {
+    "passed": 14,
+    "failed": 0
+  },
+  "normal_browser_regression": {
+    "passed": true,
+    "network_requests": 0,
+    "page_errors": 0,
+    "training_steps": 1200,
+    "critic_updates": 200,
+    "actor_updates": 100,
+    "fixed_reef_successes": 10,
+    "fixed_reef_episodes": 10
+  },
+  "source_semantics": "Highlighted snippets are extracted from executable JavaScript at build time. Each stage is shown after execution. Preview and training use the same transition and learner generators as ordinary execution."
+}

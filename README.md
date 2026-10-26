@@ -10,6 +10,8 @@ On GitHub, open the file and use **Download raw file**. Open the saved `.html` i
 
 The included reef policy is loaded and paused at startup. Wait for **Browser engine ready**, then press **Play**. Use **Pause** or single-step to inspect the vehicle, sonar rays, obstacles, current, goal, trajectory, and actual reward terms. The inspector shows replay size, update counts, losses, and episode returns.
 
+Use **Code walkthrough** to place the tank beside the source and advance through real execution stages. Follow observations into the actor, see the action move the AUV, and inspect replay, TD targets, and delayed updates during training. See [the walkthrough guide](docs/BROWSER.md#code-walkthrough) for how live motion and learning stages fit together.
+
 The example was trained with real TD3 updates for 50,000 cumulative interactions in the Python implementation. Its weights and recorded history are embedded in the HTML; those initial charts describe prior training. **Reset experiment** starts a fresh, untrained JavaScript learner. All simulation and browser training run on your device, and speed depends on its hardware.
 
 This is a **2D educational simulator** with simplified motion. It is not a hydrodynamic simulator or an exact reproduction of the three Ocean Engineering AUV studies.
@@ -144,10 +146,11 @@ The CLI saves `runs/latest-results.json` with configuration, measured metrics, r
 | `auv-practice.html` | Complete offline application, including the trained example |
 | `web_src/environment.js` | JavaScript motion, courses, sonar, geometry, rewards, and baseline |
 | `web_src/td3.js` | JavaScript networks, gradients, Adam, replay, TD3 updates, and serialization |
-| `web_src/worker.js` | Browser preview, training, evaluation, and in-tab checkpoints |
+| `web_src/worker.js` | Browser preview, training, staged walkthrough execution, evaluation, and in-tab checkpoints |
 | `web_src/bridge.js` | Embedded Blob Worker, message handling, and JSON downloads |
 | `web_src/ui.html`, `web_src/ui.js` | Offline template, controls, canvas, charts, and telemetry |
-| `scripts/build_html.py` | Model export and assembly of the single HTML file |
+| `web_src/trace_ui.js`, `web_src/trace.css` | Walkthrough controls, live values, numbered source, and responsive layout |
+| `scripts/build_html.py` | Model export, walkthrough source extraction, and assembly of the single HTML file |
 | `auv_sim/environment.py` | Motion, seeded courses, ray observations, swept collision tests, rewards, baseline |
 | `auv_sim/td3.py` | Neural networks, replay, TD3 update, learner checkpoint state |
 | `auv_sim/experiment.py` | Training/preview/evaluation lifecycles and synchronization |
@@ -177,9 +180,10 @@ node tests/browser_environment.cjs
 node tests/browser_td3.cjs
 node tests/browser_parity.cjs
 node tests/browser_lifecycle.cjs
+node tests/browser_trace.cjs
 ```
 
-Node is needed only for these development tests, not to open or train in the HTML. The optional browser automation script `scripts/check_browser.cjs` additionally uses Playwright. See the [browser guide](docs/BROWSER.md#tests) for its scope.
+Node is needed only for these development tests, not to open or train in the HTML. The optional browser automation scripts `scripts/check_browser.cjs` and `scripts/check_trace_browser.cjs` additionally use Playwright. See the [browser guide](docs/BROWSER.md#tests) for their scope.
 
 For the Python implementation:
 

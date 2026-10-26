@@ -24,10 +24,32 @@
     </section>
 
     <div id="error-banner" class="error-banner" role="alert" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 10 18H2L12 3Z"/><path d="M12 9v5m0 3v.1"/></svg><span id="error-text"></span><button id="dismiss-error" type="button" aria-label="Dismiss error">×</button></div>
+    <div class="mode-bar">
+      <div class="view-switch" role="group" aria-label="Simulator view">
+        <button id="simulation-view" class="view-button is-selected" type="button" aria-pressed="true">Simulation</button>
+        <button id="code-view" class="view-button" type="button" aria-pressed="false"><span aria-hidden="true">&lt;/&gt;</span> Code walkthrough</button>
+      </div>
+      <p id="view-description">Watch the vehicle, then follow the code behind each move.</p>
+    </div>
     <div class="run-status" id="run-status"><span id="mode-pill" class="mode-pill">STARTING</span><span id="run-message" role="status" aria-live="polite">Loading the browser engine and included reef policy.</span><span id="policy-status" class="policy-status">TD3 · loading example</span></div>
 
+    <section id="trace-toolbar" class="trace-toolbar" aria-label="Code walkthrough controls" hidden>
+      <div class="trace-setup">
+        <div class="field"><label for="trace-role">Trace loop</label><select id="trace-role"><option value="preview">Preview · no learning</option><option value="training">Training · updates weights</option></select></div>
+        <div class="field trace-noise-field" id="trace-noise-field" hidden><label for="trace-noise">Exploration noise</label><input id="trace-noise" type="number" min="0" max="0.5" step="0.01" value="0.15"></div>
+        <p id="trace-role-note">The actor controls the sub. Weights and replay stay unchanged.</p>
+      </div>
+      <div class="trace-transport">
+        <button id="trace-play" class="button button-primary" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 3 11 7-11 7z"/></svg><span id="trace-play-label">Play blocks</span></button>
+        <button id="trace-next" class="button button-secondary" type="button">Next block <span aria-hidden="true">→</span></button>
+        <button id="trace-tick" class="button button-outline" type="button" title="Finish this control step, or execute one new step if this one is complete">Next AUV step</button>
+        <div class="field trace-pace-field"><label for="trace-pace">Block pace</label><select id="trace-pace"><option value="1600">Slow</option><option value="800" selected>Steady</option><option value="300">Quick</option></select></div>
+      </div>
+      <p class="trace-transport-note" id="trace-exit-note">The highlighted block has just executed. Switching back finishes the current control step and pauses.</p>
+    </section>
+
     <main>
-      <div class="workspace">
+      <div class="workspace" id="workspace">
         <div class="main-column">
           <section class="panel tank-panel" id="simulation" aria-labelledby="tank-title">
             <div class="panel-heading tank-heading"><div><p class="section-kicker">ENVIRONMENT</p><h2 id="tank-title">Live tank <span id="scenario-label" class="subtle-badge">—</span></h2></div><div class="episode-counter"><span>Episode step</span><strong id="episode-step">0</strong></div></div>
@@ -38,6 +60,7 @@
               <div class="tank-legend" aria-hidden="true"><span><i class="legend-vehicle"></i>AUV</span><span><i class="legend-goal"></i>Goal</span><span><i class="legend-obstacle"></i>Obstacle</span><span><i class="legend-path"></i>Path</span></div>
             </div>
             <div class="view-options"><span class="view-label">SHOW</span><label><input id="show-sonar" type="checkbox" checked> Sonar</label><label><input id="show-trail" type="checkbox" checked> Path</label><label><input id="show-current" type="checkbox" checked> Current</label><span id="current-vector" class="current-readout">Current —</span></div>
+            <div id="trace-tank-status" class="trace-tank-status" hidden><span class="trace-tank-dot" aria-hidden="true"></span><span id="trace-motion-note">The AUV moves when the environment block executes.</span></div>
             <div class="transport">
               <div class="controller-field"><label for="controller">Preview controller</label><select id="controller"><option value="baseline">Map-aware baseline</option><option value="td3" selected>TD3 policy</option><option value="random">Random actions</option></select></div>
               <div class="transport-buttons"><button class="button button-primary play-button" id="play-button" type="button"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m6 3 11 7-11 7z"/></svg><span id="play-label">Play</span></button><button class="button button-secondary icon-button" id="pause-button" type="button" aria-label="Pause simulation and training" title="Pause simulation and training"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5 4h3v12H5zm7 0h3v12h-3z"/></svg></button><button class="button button-secondary icon-button" id="step-button" type="button" aria-label="Advance one simulation step" title="Advance one simulation step"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="m3 4 9 6-9 6zM14 4h3v12h-3z"/></svg></button></div>
@@ -50,6 +73,22 @@
               <div><span>Vehicle speed</span><strong id="vehicle-speed">—</strong><small>metres / second</small></div>
               <div><span>Min. clearance</span><strong id="min-clearance">—</strong><small>metres</small></div>
             </div>
+          </section>
+
+          <section id="trace-panel" class="panel trace-panel" aria-labelledby="trace-title" hidden>
+            <div class="panel-heading trace-heading"><div><p class="section-kicker">LIVE EXECUTION · JAVASCRIPT</p><h2 id="trace-title">Inside this control step</h2></div><span id="trace-boundary" class="subtle-badge">Paused at a block</span></div>
+            <ol class="trace-flow" id="trace-flow" aria-label="Control step stages">
+              <li data-group="observe"><span>1</span>Observe</li><li data-group="act"><span>2</span>Act</li><li data-group="move"><span>3</span>Move</li><li data-group="store"><span>4</span>Store</li><li data-group="learn"><span>5</span>Learn</li><li data-group="finish"><span>6</span>Finish</li>
+            </ol>
+            <div class="trace-stage-intro"><div class="trace-stage-heading"><span id="trace-stage-kind" class="trace-stage-kind">OBSERVATION</span><span id="trace-sequence" class="trace-sequence">Block 1</span></div><h3 id="trace-stage-title">Read the observation</h3><p id="trace-explanation">Follow the real values used by the simulation.</p></div>
+            <div class="trace-source-bar"><span id="trace-source-file">web_src/worker.js</span><span id="trace-source-range"></span></div>
+            <div class="trace-code-scroll" id="trace-code-scroll" tabindex="0" aria-label="Executed source code"><pre class="trace-code" id="trace-code"></pre></div>
+            <details class="trace-source-detail" id="trace-source-detail" hidden><summary id="trace-source-detail-label">Open the called implementation</summary><div class="trace-detail-location" id="trace-detail-location"></div><div class="trace-code-scroll trace-detail-scroll" tabindex="0" aria-label="Called implementation source"><pre class="trace-code trace-detail-code" id="trace-detail-code"></pre></div></details>
+            <div class="trace-values-heading"><h3>Values from this block</h3><span id="trace-values-context">Live AUV</span></div>
+            <dl id="trace-values" class="trace-values"></dl>
+            <div id="trace-equation" class="trace-equation" hidden></div>
+            <details id="trace-observation-detail" class="trace-observation-detail" hidden><summary>Inspect the 21 observation features</summary><p>16 sonar ranges, 2 goal offsets, speed, and 2 current components. All values are normalized.</p><div id="trace-observation-grid" class="trace-observation-grid"></div></details>
+            <div class="trace-footer"><span id="trace-clock">Environment step 0 · Critic update 0</span><span>Actual source · no network required</span></div>
           </section>
 
           <section class="panel learning-panel" aria-labelledby="learning-title">

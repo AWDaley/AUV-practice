@@ -252,6 +252,7 @@
       return this._collisionXY(start[0], start[1], end[0], end[1], extraMargin);
     }
 
+    // @trace-start physics
     step(action) {
       if (this.outcome !== "running") throw new Error("The episode is over; call reset before stepping again");
       if (!action || action.length !== 2 || !Number.isFinite(action[0]) || !Number.isFinite(action[1])) {
@@ -303,6 +304,7 @@
       return {observation: this._observation(), reward: this.last_reward,
         terminated, truncated, info: this._info()};
     }
+    // @trace-end physics
 
     _min_clearance() {
       const x = this.position[0], y = this.position[1];
@@ -340,6 +342,7 @@
       }
     }
 
+    // @trace-start observation_features
     _observation() {
       this._sonar();
       const observation = new Float32Array(21);
@@ -357,6 +360,7 @@
       }
       return observation;
     }
+    // @trace-end observation_features
 
     _info() {
       return {outcome: this.outcome, reward_terms: Object.assign({}, this.reward_terms),

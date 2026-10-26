@@ -22,6 +22,7 @@
   let historySignature = "";
   let chartHistory = [];
   let drawQueued = false;
+  let traceView = null;
   const edited = new Set();
 
   function number(value) {
@@ -115,7 +116,7 @@
   }
 
   async function sendCommand(path, payload, onSuccess) {
-    if (commandBusy) return;
+    if (commandBusy) return null;
     commandBusy = true;
     window.clearTimeout(pollTimer);
     updateControls();
@@ -127,9 +128,11 @@
       clearError();
       applyState(data);
       if (onSuccess) onSuccess(data);
+      return data;
     } catch (error) {
       dismissedError = "";
       showError(error?.message || String(error), "action");
+      return null;
     } finally {
       commandBusy = false;
       updateControls();
@@ -217,6 +220,7 @@
     renderEvaluation(data.evaluation);
     renderCheckpoints(data.checkpoints || []);
     renderHistory(data.history || []);
+    traceView?.renderState(data);
     updateConfigDirty();
     updateControllerNote();
     updateControls();
@@ -228,13 +232,19 @@
     const activeJob = mode === "training" || mode === "evaluating";
     const noState = !state;
     const locked = commandBusy || importReading || noState;
-    elements["play-button"].disabled = locked || activeJob;
-    elements["step-button"].disabled = locked || activeJob;
-    elements["pause-button"].disabled = locked || !["training", "preview", "evaluating"].includes(mode);
-    elements["train-button"].disabled = locked || activeJob;
-    elements["evaluate-button"].disabled = locked || activeJob;
-    elements["reset-button"].disabled = locked;
-    const canCheckpoint = !locked && !["training", "preview", "evaluating"].includes(mode);
+    const walkthrough = Boolean(state?.trace?.enabled);
+    const ordinaryLocked = locked || walkthrough;
+    elements["play-button"].disabled = ordinaryLocked || activeJob;
+    elements["step-button"].disabled = ordinaryLocked || activeJob;
+    elements["pause-button"].disabled = ordinaryLocked || !["training", "preview", "evaluating"].includes(mode);
+    elements["train-button"].disabled = ordinaryLocked || activeJob;
+    elements["evaluate-button"].disabled = ordinaryLocked || activeJob;
+    elements["reset-button"].disabled = ordinaryLocked;
+    elements.controller.disabled = walkthrough;
+    elements["preview-speed"].disabled = walkthrough;
+    elements["exploration-noise"].disabled = walkthrough;
+    elements["training-steps"].disabled = walkthrough;
+    const canCheckpoint = !ordinaryLocked && !["training", "preview", "evaluating"].includes(mode);
     elements["save-button"].disabled = !canCheckpoint || !state?.policy_ready;
     elements["save-button"].title = !state?.policy_ready ? "Train the TD3 policy before saving." : !canCheckpoint ? "Pause the run before saving." : "Save the current TD3 policy.";
     const hasCheckpoint = Boolean(elements["checkpoint-select"].value);
@@ -243,12 +253,13 @@
     elements["load-button"].title = !canCheckpoint ? "Pause the run before loading." : "Load the selected saved policy.";
     elements["import-button"].disabled = !canCheckpoint;
     elements["import-button"].title = !canCheckpoint ? "Pause the run before importing a checkpoint." : "Import a JSON checkpoint, up to 8 MB.";
-    elements["export-results-button"].disabled = locked;
+    elements["export-results-button"].disabled = ordinaryLocked;
     setText("import-button", importReading ? "Reading JSON…" : "Import checkpoint");
     setText("train-label", mode === "training" ? "Training…" : state?.policy_ready ? "Continue training" : "Train policy");
     setText("evaluate-button", mode === "evaluating" ? "Evaluating…" : "Evaluate");
     elements["train-button"].setAttribute("aria-busy", String(mode === "training"));
     elements["evaluate-button"].setAttribute("aria-busy", String(mode === "evaluating"));
+    traceView?.updateControls({ locked });
   }
 
   function updateControllerNote() {
@@ -402,7 +413,7 @@
     const file = elements["import-file"].files?.[0];
     elements["import-file"].value = "";
     if (!file) return;
-    if (commandBusy || importReading || !state || ["training", "preview", "evaluating"].includes(state.mode)) {
+    if (commandBusy || importReading || !state || state.trace?.enabled || ["training", "preview", "evaluating"].includes(state.mode)) {
       showError("Pause the run before importing a checkpoint.");
       return;
     }
@@ -737,6 +748,10 @@
   window.addEventListener("resize", resize);
   window.addEventListener("pagehide", () => { stopped = true; window.clearTimeout(pollTimer); });
   window.addEventListener("pageshow", (event) => { if (event.persisted) { stopped = false; schedulePoll(); } });
+
+  traceView = window.createAUVTraceView({ elements, getState: () => state,
+    sendCommand, setText, redraw: resize, refreshControls: updateControls,
+    isLocked: () => commandBusy || importReading || !state });
 
   setText("action-1-label", "Acceleration command");
   setText("action-2-label", "Turn command");

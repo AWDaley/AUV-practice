@@ -192,6 +192,7 @@
       return workspace;
     }
 
+    // @trace-start network_forward
     forward(inputs, batchSize = 1, retain = false) {
       integer(batchSize, "Network batch size", 1, 4096);
       finiteArray(inputs, batchSize * this.inputDim, "Network input");
@@ -216,6 +217,7 @@
       // This view is reused by the next forward call of the same batch size.
       return workspace.values[3];
     }
+    // @trace-end network_forward
 
     zeroGrad() { this.gradients.fill(0); }
 
@@ -253,6 +255,7 @@
       return returnInput ? workspace.deltas[0] : null;
     }
 
+    // @trace-start soft_update
     softUpdate(online, tau) {
       arrayLength(online.params, this.params.length, "Online parameters");
       for (let i = 0; i < this.params.length; i++) {
@@ -260,6 +263,7 @@
         if (!Number.isFinite(this.params[i])) throw new Error("Non-finite target parameter; learning stopped");
       }
     }
+    // @trace-end soft_update
   }
 
   class Adam {
@@ -341,7 +345,7 @@
       this._size = Math.min(this._size + 1, this.capacity);
     }
 
-    sample(batchSize) {
+    sample(batchSize, trace = false) {
       integer(batchSize, "Replay batch size", 1, 4096);
       if (!this._size) throw new Error("Cannot sample empty replay");
       const batch = {
@@ -351,8 +355,10 @@
         next_observations: new Float32Array(batchSize * this.obsDim),
         not_done: new Float32Array(batchSize), batch_size: batchSize,
       };
+      if (trace) batch.indices = new Uint32Array(batchSize);
       for (let row = 0; row < batchSize; row++) {
         const index = Math.floor(this.rng.uniform() * this._size);
+        if (trace) batch.indices[row] = index;
         for (let i = 0; i < this.obsDim; i++) {
           batch.observations[row * this.obsDim + i] = this.observations[index * this.obsDim + i];
           batch.next_observations[row * this.obsDim + i] = this.next_observations[index * this.obsDim + i];
@@ -389,8 +395,10 @@
     }
 
     selectAction(obs) {
+      // @trace-start actor
       finiteArray(obs, this.obsDim, "Observation");
       return Float32Array.from(this.actor.forward(obs));
+      // @trace-end actor
     }
 
     actionValues(obs, action) {
@@ -405,14 +413,23 @@
       return [this.q1.forward(input)[0], this.q2.forward(input)[0]];
     }
 
-    _targetActions(nextObs, batchSize, output = new Float32Array(batchSize * this.actionDim)) {
+    _targetActions(nextObs, batchSize, output = new Float32Array(batchSize * this.actionDim), trace = null) {
+      // @trace-start target_actions
       const proposed = this.actorTarget.forward(nextObs, batchSize);
       for (let i = 0; i < output.length; i++) {
-        const noise = clamp(this.rng.normal() * this.config.policy_noise, -this.config.noise_clip, this.config.noise_clip);
+        const rawNoise = this.rng.normal() * this.config.policy_noise;
+        const noise = clamp(rawNoise, -this.config.noise_clip, this.config.noise_clip);
         output[i] = clamp(proposed[i] + noise, -1, 1);
         if (!Number.isFinite(output[i])) throw new Error("Non-finite target action");
+        if (trace && i < this.actionDim) {
+          trace.proposed_action.push(proposed[i]);
+          trace.raw_noise.push(rawNoise);
+          trace.clipped_noise.push(noise);
+          trace.smoothed_action.push(output[i]);
+        }
       }
       return output;
+      // @trace-end target_actions
     }
 
     _join(observations, actions, output, batchSize) {
@@ -436,19 +453,54 @@
       return this._scratch;
     }
 
+    // Fast training and the walkthrough execute this same generator. Pausing at
+    // a yield does not sample again, run a second forward pass, or alter RNGs.
     update(buffer) {
+      const run = this.updateSteps(buffer, false);
+      let next = run.next();
+      while (!next.done) next = run.next();
+      return next.value;
+    }
+
+    *updateSteps(buffer, trace = true) {
       if (!buffer || buffer.obsDim !== this.obsDim || buffer.actionDim !== this.actionDim) {
         throw new Error("Replay dimensions do not match the learner");
       }
-      const size = this.config.batch_size, batch = buffer.sample(size), work = this._workspace();
-      this._targetActions(batch.next_observations, size, work.targetActions);
+      const event = (key, title, explanation, values) => ({ key, source: key, title, explanation, values });
+      // @trace-start replay_sample
+      const size = this.config.batch_size;
+      const batch = buffer.sample(size, trace);
+      const work = this._workspace();
+      // @trace-end replay_sample
+      if (trace) yield event("replay_sample", "Sample past experience", "This is the first row of the actual random minibatch, not necessarily the AUV's current position. Sampling is uniform with replacement.", {
+        batch_size: size, replay_size: buffer.length, sample_index: batch.indices[0],
+        observation: Array.from(batch.observations.subarray(0, this.obsDim)),
+        action: Array.from(batch.actions.subarray(0, this.actionDim)),
+        reward: batch.rewards[0], next_observation: Array.from(batch.next_observations.subarray(0, this.obsDim)),
+        not_done: batch.not_done[0],
+      });
+
+      const targetTrace = trace ? { proposed_action: [], raw_noise: [], clipped_noise: [], smoothed_action: [] } : null;
+      this._targetActions(batch.next_observations, size, work.targetActions, targetTrace);
+      if (trace) yield event("target_actions", "Smooth the target action", "The target actor proposes the next action for each replay row. Clipped target noise is used only for learning; it does not steer the visible AUV.", {
+        sample_index: batch.indices[0], policy_noise: this.config.policy_noise, noise_clip: this.config.noise_clip, ...targetTrace,
+      });
+      // @trace-start bellman_target
       this._join(batch.next_observations, work.targetActions, work.next, size);
-      const next1 = this.q1Target.forward(work.next, size), next2 = this.q2Target.forward(work.next, size);
+      const next1 = this.q1Target.forward(work.next, size);
+      const next2 = this.q2Target.forward(work.next, size);
       for (let i = 0; i < size; i++) {
         if (batch.not_done[i] !== 0 && batch.not_done[i] !== 1) throw new Error("Invalid replay continuation mask");
         work.target[i] = batch.rewards[i] + this.config.discount * batch.not_done[i] * Math.min(next1[i], next2[i]);
         finite(work.target[i], "TD target");
       }
+      // @trace-end bellman_target
+      if (trace) yield event("bellman_target", "Build the TD target", "For the same sampled row: reward + discount × not_done × the smaller target-critic estimate. True termination removes the future term; an external timeout retains it.", {
+        sample_index: batch.indices[0], reward: batch.rewards[0], discount: this.config.discount,
+        not_done: batch.not_done[0], target_q1: next1[0], target_q2: next2[0],
+        min_target_q: Math.min(next1[0], next2[0]), target: work.target[0],
+      });
+      // @trace-start critic
       this._join(batch.observations, batch.actions, work.current, size);
       const current1 = this.q1.forward(work.current, size, true);
       const current2 = this.q2.forward(work.current, size, true);
@@ -471,8 +523,18 @@
       this.optimizers.q1.step(this.q1.gradients);
       this.optimizers.q2.step(this.q2.gradients);
       this.updates++;
+      // @trace-end critic
+      if (trace) yield { ...event("critic", "Update both critics", "The two critics learn from this minibatch's target. The displayed Q values and TD error were measured before these optimizer steps.", {
+        sample_index: batch.indices[0], first_q1: current1[0], first_q2: current2[0], first_target: work.target[0],
+        critic_loss: loss, q1_mean: q1Mean, q2_mean: q2Mean, mean_absolute_td_error: error,
+        critic_updates: this.updates,
+      }), metrics: { critic_loss: loss, q1: q1Mean, q2: q2Mean, td_error: error, updates: this.updates } };
       let actorLoss = null;
-      if (this.updates % this.config.policy_delay === 0) {
+      // @trace-start actor_skip
+      const updateActor = this.updates % this.config.policy_delay === 0;
+      // @trace-end actor_skip
+      if (updateActor) {
+        // @trace-start actor_update
         const proposed = this.actor.forward(batch.observations, size, true);
         this._join(batch.observations, proposed, work.actorInput, size);
         const policyValues = this.q1.forward(work.actorInput, size, true);
@@ -489,10 +551,28 @@
         this.actor.zeroGrad();
         this.actor.backward(work.actorGradient, { inputGradient: false });
         this.optimizers.actor.step(this.actor.gradients);
+        this.actor_updates++;
+        // @trace-end actor_update
+        if (trace) yield { ...event("actor_update", "Improve the actor through Q1", "This delayed update changes the actor to increase Q1's estimate. Gradients pass through Q1's action input, but this step does not update Q1's parameters.", {
+          actor_loss: actorLoss, critic_updates: this.updates, actor_updates: this.actor_updates,
+          policy_delay: this.config.policy_delay,
+        }), metrics: { actor_loss: actorLoss, actor_updates: this.actor_updates } };
+        const before = trace ? [this.actorTarget.params[0], this.q1Target.params[0], this.q2Target.params[0]] : null;
+        // @trace-start soft_targets
         this.actorTarget.softUpdate(this.actor, this.config.tau);
         this.q1Target.softUpdate(this.q1, this.config.tau);
         this.q2Target.softUpdate(this.q2, this.config.tau);
-        this.actor_updates++;
+        // @trace-end soft_targets
+        if (trace) yield event("soft_targets", "Move the target networks slowly", "All three targets move a small fraction tau toward their online networks. These are actual first-weight values, in actor / Q1 / Q2 order.", {
+          tau: this.config.tau, target_weights_before: before,
+          online_weights: [this.actor.params[0], this.q1.params[0], this.q2.params[0]],
+          target_weights_after: [this.actorTarget.params[0], this.q1Target.params[0], this.q2Target.params[0]],
+        });
+      } else if (trace) {
+        yield event("actor_skip", "Keep the actor and targets unchanged", "This critic update is between delayed actor updates. The actor and all target networks keep their current parameters.", {
+          critic_updates: this.updates, actor_updates: this.actor_updates,
+          policy_delay: this.config.policy_delay, update_actor: false,
+        });
       }
       // Q values and absolute TD error refer to the pre-update sampled batch.
       return { critic_loss: loss, actor_loss: actorLoss, q1: q1Mean, q2: q2Mean,

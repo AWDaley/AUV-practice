@@ -39,3 +39,4 @@ jobs:
           node tests/browser_td3.cjs
           node tests/browser_parity.cjs
           node tests/browser_lifecycle.cjs
+          node tests/browser_trace.cjs
