@@ -25,6 +25,8 @@
       this.saveCounter = 0;
       this.mode = "idle";
       this.warmupSteps = 1000;
+      this.trace = { enabled: false, role: "preview", sequence: 0, transition: 0, stage: null, at_boundary: true };
+      this.traceIterator = null;
       this.newExperiment({ seed: 7, scenario: "reef", current_strength: 0.08 });
       if (demo) {
         this.importCheckpoint(demo, true);
@@ -42,6 +44,7 @@
     }
 
     stop(message = "Paused. Weights and replay remain in this tab.") {
+      this.finishTrace();
       this.generation++;
       if (this.timer !== null) clearTimeout(this.timer);
       this.timer = null;
@@ -49,6 +52,17 @@
       this.mode = "paused";
       if (this.training) this.training.steps_per_second = 0;
       this.message = message;
+    }
+
+    finishTrace() {
+      // Never leave a consumed action, replay write, or optimizer update half
+      // committed when another operation takes ownership of the experiment.
+      if (this.trace?.enabled && this.traceIterator && !this.trace.at_boundary) {
+        while (!this.trace.at_boundary) this.advanceTrace();
+      }
+      if (this.traceIterator) this.traceIterator.return();
+      this.traceIterator = null;
+      if (this.trace) this.trace.enabled = false;
     }
 
     schedule(callback, delay = 0, generation = this.generation) {
@@ -83,6 +97,7 @@
       this.episodeDone = false;
       this.controller = "td3";
       this.mode = "idle";
+      this.trace = { enabled: false, role: "preview", sequence: 0, transition: 0, stage: null, at_boundary: true };
       this.message = "Fresh TD3 policy. Train it here, or load the included trained example.";
       return this.state();
     }
@@ -94,21 +109,218 @@
       throw new Error("Unknown controller.");
     }
 
+    // Both ordinary playback/training and the code walkthrough use this exact
+    // transition. The trace flag only copies values and exposes yield points.
+    *transitionSteps(role, trace = false) {
+      const training = role === "training";
+      const event = (key, title, explanation, values) => ({ key, source: key, title, explanation, values });
+      if (this.episodeDone) {
+        // @trace-start reset
+        this.obs = this.env.reset().observation;
+        this.episodeDone = false;
+        // @trace-end reset
+        if (trace) yield event("reset", "Start the next episode", "The previous episode is finished. Reset creates a new course; replay and learned weights remain available.", {
+          episode_step: this.env.episode_step, position: this.env.position.slice(), goal: this.env.goal.slice(),
+        });
+      }
+      // @trace-start observation
+      const observation = this.obs;
+      // @trace-end observation
+      if (trace) yield event("observation", "Read the current observation", "The actor receives 21 features: 16 normalized sonar ranges, 2 body-frame goal offsets, normalized speed, and 2 body-frame current components. This observation came from reset or the preceding step.", {
+        observation: Array.from(observation), sonar: Array.from(observation.subarray(0, 16)),
+        goal_body: Array.from(observation.subarray(16, 18)), speed_normalized: observation[18],
+        current_body: Array.from(observation.subarray(19, 21)), episode_step: this.env.episode_step,
+      });
+      const randomWarmup = training && this.training.steps < this.warmupSteps;
+      const controller = randomWarmup ? "random" : training ? "td3" : this.controller;
+      if (controller === "random") {
+        // @trace-start random
+        this.action = this.choose("random", this.env, observation);
+        // @trace-end random
+      } else if (controller === "baseline") {
+        // @trace-start baseline
+        this.action = this.choose("baseline", this.env, observation);
+        // @trace-end baseline
+      } else {
+        this.action = this.agent.selectAction(observation);
+      }
+      if (training) this.training.phase = randomWarmup ? "Random warm-up" : "Learning from replay";
+      if (trace) yield event(controller === "td3" ? "actor" : controller,
+        randomWarmup ? "Collect a random warm-up action" : controller === "td3" ? "Run the actor" : controller === "baseline" ? "Run the map-aware baseline" : "Sample a random action",
+        randomWarmup ? "The first 1,000 cumulative training interactions collect random commands. The actor does not choose this action."
+          : controller === "td3" ? "One forward pass produces acceleration and yaw commands in [-1, 1]. The critics do not approve or veto this command."
+            : controller === "baseline" ? "The hand-written A* controller has the full obstacle map; it is separate from the learned TD3 actor."
+              : "This controller samples commands without using a learned policy.",
+        { action: Array.from(this.action), controller, random_warmup: randomWarmup,
+          training_steps: this.training.steps, actor_shape: controller === "td3" ? [21, this.agent.config.hidden_dim, this.agent.config.hidden_dim, 2] : null });
+      if (training && !randomWarmup) {
+        const before = trace ? Array.from(this.action) : null, noise = trace ? [] : null;
+        // @trace-start exploration
+        for (let i = 0; i < 2; i++) {
+          const perturbation = this.training.exploration_noise * this.rng.normal();
+          this.action[i] = Math.max(-1, Math.min(1, this.action[i] + perturbation));
+          if (trace) noise.push(perturbation);
+        }
+        // @trace-end exploration
+        if (trace) yield event("exploration", "Add exploration noise", "This noise changes the command sent to the AUV during training. Preview uses the actor's action directly. Target smoothing is a different operation later in the learner.", {
+          actor_action: before, exploration_std: this.training.exploration_noise, noise, executed_action: Array.from(this.action),
+        });
+      }
+      const before = trace ? { position: this.env.position.slice(), speed: this.env.speed, heading: this.env.heading } : null;
+      // @trace-start environment
+      const result = this.env.step(this.action);
+      this.obs = result.observation;
+      this.episodeDone = result.terminated || result.truncated;
+      // @trace-end environment
+      if (trace) yield { ...event("environment", "Move the AUV and measure reward", "The environment applies acceleration, yaw, drag, and current, checks the swept path for a goal or collision, then returns the next observation and reward. Only this stage moves the AUV.", {
+        action: Array.from(this.action), dt: this.env.config.dt,
+        position_before: before.position, position_after: this.env.position.slice(),
+        speed_before: before.speed, speed_after: this.env.speed,
+        heading_before: before.heading, heading_after: this.env.heading,
+        reward: result.reward, reward_terms: { ...this.env.reward_terms },
+        terminated: result.terminated, truncated: result.truncated, outcome: this.env.outcome,
+        goal_distance: Math.hypot(this.env.goal[0] - this.env.position[0], this.env.goal[1] - this.env.position[1]),
+      }), details_source: "physics" };
+      if (training) {
+        const slot = this.replay.position;
+        // @trace-start replay_add
+        this.replay.add(observation, this.action, result.reward, result.observation, result.terminated);
+        this.training.steps++;
+        this.training.buffer_size = this.replay.length;
+        // @trace-end replay_add
+        if (trace) {
+          this.training.total_steps = Math.max(this.training.total_steps, this.training.steps);
+          yield event("replay_add", "Store this transition", "Replay stores the real final observation before any reset. Only true termination sets not_done to zero; a time limit retains the bootstrap.", {
+            slot, replay_size: this.replay.length, training_steps: this.training.steps,
+            reward: result.reward, terminated: result.terminated, truncated: result.truncated,
+            not_done: 1 - Number(result.terminated),
+          });
+        }
+        // @trace-start learning_wait
+        const canLearn = this.training.steps > this.warmupSteps
+          && this.replay.length >= this.agent.config.batch_size;
+        // @trace-end learning_wait
+        if (canLearn) {
+          const update = this.agent.updateSteps(this.replay, trace);
+          let next = update.next();
+          while (!next.done) {
+            if (next.value.metrics) Object.assign(this.training, next.value.metrics);
+            yield next.value;
+            next = update.next();
+          }
+          for (const [key, value] of Object.entries(next.value)) if (value !== null) this.training[key] = value;
+        } else if (trace) {
+          yield event("learning_wait", "Collect more experience before learning", "No optimizer update ran on this transition. A fresh learner needs to finish warm-up; a loaded learner still needs one full new replay batch.", {
+            can_learn: false, training_steps: this.training.steps, warmup_steps: this.warmupSteps,
+            replay_size: this.replay.length, batch_size: this.agent.config.batch_size,
+          });
+        }
+        if (this.episodeDone) {
+          // @trace-start episode
+          const s = this.env.snapshot();
+          this.training.episodes++;
+          this.history.push({ episode: this.training.episodes, steps: this.training.steps,
+            return: s.episode_return, length: s.episode_step, outcome: s.outcome });
+          if (this.history.length > 500) this.history.shift();
+          // @trace-end episode
+          if (trace) yield event("episode", "Record the completed episode", "The outcome and return are added to training history. The final position stays visible until you advance into the next episode.", {
+            outcome: s.outcome, episode_return: s.episode_return, episode_steps: s.episode_step,
+            completed_episodes: this.training.episodes,
+          });
+        }
+      }
+      // @trace-start transition_end
+      const summary = { episode_step: this.env.episode_step, outcome: this.env.outcome,
+        training_steps: this.training.steps, critic_updates: this.agent.updates,
+        actor_updates: this.agent.actor_updates, replay_size: this.replay.length };
+      // @trace-end transition_end
+      if (trace) yield event("transition_end", "One AUV transition complete", training
+        ? "The environment step and all eligible learning updates are complete. Advance to inspect the next transition."
+        : "Preview is complete for this step. It did not write replay or change any network weights.", summary);
+      return result;
+    }
+
     previewTick() {
+      const run = this.transitionSteps("preview");
+      while (!run.next().done) { /* Shared execution path, with tracing off. */ }
+    }
+
+    trainingTick() {
+      const run = this.transitionSteps("training");
+      while (!run.next().done) { /* Shared execution path, with tracing off. */ }
+      // Fast training keeps its immediate reset. Walkthroughs hold the final
+      // state until the next transition's explicit reset stage.
       if (this.episodeDone) {
         this.obs = this.env.reset().observation;
         this.episodeDone = false;
       }
-      this.action = this.choose(this.controller, this.env, this.obs);
-      const result = this.env.step(this.action);
-      this.obs = result.observation;
-      this.episodeDone = result.terminated || result.truncated;
+    }
+
+    advanceTrace() {
+      if (!this.trace.enabled) throw new Error("Open Code walkthrough before stepping code.");
+      if (this.trace.at_boundary && this.traceIterator) {
+        this.traceIterator.return();
+        this.traceIterator = null;
+      }
+      if (!this.traceIterator) {
+        this.trace.transition++;
+        this.trace.at_boundary = false;
+        this.traceIterator = this.transitionSteps(this.trace.role, true);
+      }
+      let next;
+      try { next = this.traceIterator.next(); }
+      catch (error) {
+        this.traceIterator = null;
+        this.trace.enabled = false;
+        this.trace.at_boundary = true;
+        this.mode = "error";
+        throw error;
+      }
+      if (next.done) throw new Error("The walkthrough ended without a transition boundary.");
+      this.trace.sequence++;
+      this.trace.stage = { ...next.value, sequence: this.trace.sequence,
+        transition: this.trace.transition, episode_step: this.env.episode_step,
+        training_steps: this.training.steps };
+      this.trace.at_boundary = next.value.key === "transition_end";
+      this.message = `${next.value.title}. ${this.trace.role === "training" ? "Training" : "Preview"} code walkthrough.`;
+      return this.trace.stage;
+    }
+
+    traceControl({ command, role = "preview", controller = "td3", exploration_noise = this.training.exploration_noise } = {}) {
+      if (!["start", "step", "tick", "exit"].includes(command)) throw new Error("Unknown code walkthrough command.");
+      if (command === "exit") {
+        this.stop("Code walkthrough paused. The current transition is complete; weights and replay remain in this tab.");
+        return this.state();
+      }
+      if (command === "start") {
+        if (!["preview", "training"].includes(role)) throw new Error("Choose preview or training for the walkthrough.");
+        if (!["td3", "baseline", "random"].includes(controller)) throw new Error("Unknown controller.");
+        bounded(exploration_noise, 0, 1, "Exploration noise");
+        this.stop();
+        this.controller = role === "training" ? "td3" : controller;
+        if (this.envRole !== role) {
+          this.obs = this.env.reset().observation;
+          this.episodeDone = false;
+        }
+        this.envRole = role;
+        this.mode = "walkthrough";
+        this.training.steps_per_second = 0;
+        if (role === "training") this.training.exploration_noise = exploration_noise;
+        this.trace = { enabled: true, role, sequence: 0, transition: 0, stage: null, at_boundary: true };
+      }
+      this.advanceTrace();
+      if (command === "tick") while (!this.trace.at_boundary) this.advanceTrace();
+      return this.state();
     }
 
     control({ command, controller = "td3", speed = 4 }) {
       if (!["play", "pause", "step"].includes(command)) throw new Error("Unknown playback command.");
       if (!["td3", "baseline", "random"].includes(controller)) throw new Error("Unknown controller.");
       bounded(speed, 0.1, 32, "Playback speed");
+      if (command === "pause" && this.trace.enabled) {
+        this.message = "Code walkthrough paused at the current stage.";
+        return this.state();
+      }
       this.stop();
       if (command === "pause") return this.state();
       this.controller = controller;
@@ -165,31 +377,7 @@
             this.message = "Budget complete. Preview or evaluate TD3 without exploration noise.";
             return;
           }
-          if (this.training.steps < this.warmupSteps) {
-            this.action = this.choose("random", this.env, this.obs);
-            this.training.phase = "Random warm-up";
-          } else {
-            this.action = this.agent.selectAction(this.obs);
-            for (let i = 0; i < 2; i++) this.action[i] = Math.max(-1, Math.min(1, this.action[i] + exploration_noise * this.rng.normal()));
-            this.training.phase = "Learning from replay";
-          }
-          const result = this.env.step(this.action);
-          this.replay.add(this.obs, this.action, result.reward, result.observation, result.terminated);
-          this.obs = result.observation;
-          this.training.steps++;
-          this.training.buffer_size = this.replay.length;
-          if (this.training.steps > this.warmupSteps && this.replay.length >= this.agent.config.batch_size) {
-            const metrics = this.agent.update(this.replay);
-            for (const [key, value] of Object.entries(metrics)) if (value !== null) this.training[key] = value;
-          }
-          if (result.terminated || result.truncated) {
-            const s = this.env.snapshot();
-            this.training.episodes++;
-            this.history.push({ episode: this.training.episodes, steps: this.training.steps,
-              return: s.episode_return, length: s.episode_step, outcome: s.outcome });
-            if (this.history.length > 500) this.history.shift();
-            this.obs = this.env.reset().observation;
-          }
+          this.trainingTick();
           this.training.steps_per_second = 1000 * (this.training.steps - startSteps) / Math.max(1, now() - startTime);
         } while (now() < deadline);
         this.schedule(chunk, 0, generation);
@@ -302,6 +490,7 @@
       this.envRole = "preview";
       this.episodeDone = false;
       this.controller = "td3";
+      this.trace = { enabled: false, role: "preview", sequence: 0, transition: 0, stage: null, at_boundary: true };
       this.saved.set(payload.name, clone(payload));
       this.message = included ? "Included trained example loaded. Press Play."
         : "Loaded browser policy. Replay restarts; this does not restore an exact running experiment.";
@@ -340,7 +529,7 @@
       const env = this.evaluationEnv || this.env;
       return { mode: this.mode, controller: this.controller, message: this.message, env: env.snapshot(),
         training: { ...this.training }, history: this.history.map(row => ({ ...row })),
-        evaluation: clone(this.evaluation), config: { ...this.config },
+        evaluation: clone(this.evaluation), config: { ...this.config }, trace: clone(this.trace),
         checkpoints: [...this.saved.values()].map(p => ({ name: p.name, steps: p.training.steps, created: p.created })).reverse(),
         action: Array.from(this.evaluationEnv ? this.evaluationAction : this.action), policy_ready: this.training.actor_updates > 0 };
     }
@@ -350,6 +539,7 @@
         case "/api/state": return this.state();
         case "/api/reset": return this.newExperiment(payload);
         case "/api/control": return this.control(payload);
+        case "/api/trace": return this.traceControl(payload);
         case "/api/train": return this.startTraining(payload);
         case "/api/evaluate": return this.startEvaluation(payload);
         case "/api/save": return this.save();

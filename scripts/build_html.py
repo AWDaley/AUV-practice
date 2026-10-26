@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import re
 from pathlib import Path
 
 import numpy as np
@@ -16,6 +17,38 @@ import torch
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def trace_sources() -> dict:
+    """Extract the displayed code from the exact executable source at build time."""
+    blocks = {}
+    marker = re.compile(r"^\s*// @trace-(start|end) ([a-z_]+)\s*$")
+    for name in ("environment", "td3", "worker"):
+        filename = f"web_src/{name}.js"
+        lines = (ROOT / filename).read_text(encoding="utf-8").splitlines()
+        opened = {}
+        for number, line in enumerate(lines, start=1):
+            match = marker.match(line)
+            if not match:
+                continue
+            kind, key = match.groups()
+            if kind == "start":
+                if key in opened or key in blocks:
+                    raise ValueError(f"Duplicate trace source marker: {key}")
+                opened[key] = number + 1
+            else:
+                if key not in opened:
+                    raise ValueError(f"Unmatched trace source end: {key}")
+                start = opened.pop(key)
+                if number <= start:
+                    raise ValueError(f"Empty trace source block: {key}")
+                blocks[key] = {"file": filename, "start_line": start,
+                               "end_line": number - 1, "lines": lines[start - 1:number - 1]}
+        if opened:
+            raise ValueError(f"Unclosed trace source markers in {filename}: {list(opened)}")
+    if not blocks:
+        raise ValueError("The walkthrough needs source markers in the executable code")
+    return blocks
 
 
 def encode(tensors) -> str:
@@ -115,11 +148,14 @@ def main() -> None:
     worker = "\n".join((ROOT / f"web_src/{name}.js").read_text(encoding="utf-8") for name in ("environment", "td3", "worker"))
     bridge = (ROOT / "web_src/bridge.js").read_text(encoding="utf-8")
     ui = (ROOT / "web_src/ui.js").read_text(encoding="utf-8")
+    trace_ui = (ROOT / "web_src/trace_ui.js").read_text(encoding="utf-8")
     styles = (ROOT / "auv_sim/static/styles.css").read_text(encoding="utf-8")
+    styles += "\n" + (ROOT / "web_src/trace.css").read_text(encoding="utf-8")
     safe_json = lambda value: json.dumps(value, separators=(",", ":"), ensure_ascii=True).replace("</", "<\\/")
     scripts = (f'<script id="auv-worker-source" type="application/json">{safe_json(worker)}</script>\n'
                f'<script id="auv-demo-model" type="application/json">{safe_json(demo)}</script>\n'
-               f'<script>\n{bridge}\n</script>\n<script>\n{ui}\n</script>')
+               f'<script id="auv-trace-source" type="application/json">{safe_json(trace_sources())}</script>\n'
+               f'<script>\n{bridge}\n</script>\n<script>\n{trace_ui}\n</script>\n<script>\n{ui}\n</script>')
     if template.count("<!-- INLINE_STYLES -->") != 1 or template.count("<!-- INLINE_SCRIPTS -->") != 1:
         raise ValueError("Template must contain exactly one styles and scripts placeholder")
     html = template.replace("<!-- INLINE_STYLES -->", f"<style>\n{styles}\n</style>")
